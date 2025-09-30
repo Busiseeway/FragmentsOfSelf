@@ -1,0 +1,45 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #1a1a1a;
+    font-family: 'Arial', sans-serif;
+}
+
+canvas {
+    display: block;
+}
+
+#gameUI {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+}
+
+#instructions {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 15px;
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+#instructions div:first-child {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+#instructions div:not(:first-child) {
+    margin-top: 4px;
+}
