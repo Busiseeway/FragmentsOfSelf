@@ -17,6 +17,11 @@ let roadSegments = [];
 let treeGroups = [];
 let waterfalls = [];
 
+//theto
+let jump_can=1;
+let velocity_y=0;
+let delta=0;
+
 init();
 
 function init() {
@@ -61,12 +66,23 @@ function handleKeyDown(keyEvent) {
         if (currentLane > leftLane) {
             currentLane -= 2;
         }
-    } else if (keyEvent.keyCode === 39) { // right
+    } 
+    
+    else if (keyEvent.keyCode === 39) { // right
         if (currentLane < rightLane) {
             currentLane += 2;
         }
     }
-}
+    //theto
+    else if (keyEvent.keyCode === 38 && jump_can==1) { //up
+        jump_can=0;
+        velocity_y=16;
+        }
+       
+    }
+
+
+  
 
 function addHero() {
     const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
@@ -570,7 +586,24 @@ function update() {
     heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
     
     // Add subtle bouncing
-    heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+    //heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+
+    //theto (jump animation when up key is pressed)
+    if (jump_can === 0) {
+    heroSphere.position.y += velocity_y * deltaTime;
+    velocity_y -= 45 * deltaTime; 
+
+        if (heroSphere.position.y <= heroBaseY) {
+            heroSphere.position.y = heroBaseY;
+            velocity_y = 0;
+            jump_can = 1; 
+        }
+    } 
+    
+    else {
+        
+        heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+    }
     
     // Move road segments to create infinite road effect
     roadSegments.forEach(segment => {
