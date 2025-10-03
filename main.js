@@ -21,6 +21,8 @@ let waterfalls = [];
 let jump_can=1;
 let velocity_y=0;
 let delta=0;
+let railings = [];
+
 
 init();
 
@@ -53,6 +55,9 @@ function createScene() {
     addLight();
     addSideTrees();
     addSideWaterfalls(); // Add waterfalls along the sides
+
+    //theto (add railings to scene)
+    addSideRailings();
     
     camera.position.set(0, 4, 8);
     camera.lookAt(0, 0, 0);
@@ -131,7 +136,9 @@ function addRoad() {
             color: 0xE6D7C3,
             transparent: false,
             roughness: 0.9,
-            vertexColors: false
+            vertexColors: false,
+            metalness: 0.1,
+            opacity: 0.85
         });
         
         const roadSegment = new THREE.Mesh(roadGeometry, roadMaterial);
@@ -149,11 +156,11 @@ function addRoad() {
     
     // Natural sand color variations
     const sandColors = [
-        0xF0E68C,
-        0xE6D7C3, 
-        0xDEB887, 
-        0xD2B48C, 
-        0xC19A6B  
+        0x556B2F, 
+        0x6B8E23, 
+        0x2F4F4F, 
+        0x3E2723, 
+        0x1B4D3E 
     ];
     
     for (let i = 0; i < sandSegments; i++) {
@@ -304,10 +311,10 @@ function createRealisticStone() {
 }
 
 function addLight() {
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
     scene.add(hemisphereLight);
     
-    sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun = new THREE.DirectionalLight(0xffffff, 0.02);
     sun.position.set(10, 10, 5);
     sun.castShadow = true;
     scene.add(sun);
@@ -344,6 +351,34 @@ function addSideTrees() {
         treeGroups.push(rightTree);
     }
 }
+
+//theto (adding railings to side of road)
+function createRailingStrip() {
+    const geometry = new THREE.BoxGeometry(0.3, 2, 1000); 
+    const material = new THREE.MeshStandardMaterial({ color: 0x556B2F, roughness: 0.8 });
+    return new THREE.Mesh(geometry, material);
+}
+
+
+function addSideRailings() {
+    const numberOfStrips = 1000;  // number of repeating segments
+    const stripSpacing = 100;   // length of each segment
+
+    for (let i = 0; i < numberOfStrips; i++) {
+        const left = createRailingStrip();
+        left.position.set(-4.5, 0.5, -i * stripSpacing);
+        scene.add(left);
+        railings.push(left);
+
+        const right = createRailingStrip();
+        right.position.set(4.5, 0.5, -i * stripSpacing);
+        scene.add(right);
+        railings.push(right);
+    }
+}
+
+
+
 
 function addSideWaterfalls() {
     // Add waterfalls along both sides of the road
@@ -612,6 +647,14 @@ function update() {
             segment.position.z -= roadSegments.length * 20;
         }
     });
+
+    //theto
+    railings.forEach(railing=>{
+        railing.position.z+=rollingSpeed;
+        if(railing.position.z>20){
+            railing.position.z-=1000;
+        }
+    })
     
     // Move trees to create infinite forest effect
     treeGroups.forEach(tree => {
