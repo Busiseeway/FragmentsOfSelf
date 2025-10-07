@@ -22,6 +22,14 @@ let jump_can=1;
 let velocity_y=0;
 let delta=0;
 let railings = [];
+let cloudParticles=[];
+let rainParticles=[];
+let flash;
+let rain;
+let rainMaterial, rainVelocities;
+let rainCount = 3900000;
+let waterSegments = []; 
+
 
 
 init();
@@ -32,6 +40,8 @@ function init() {
 }
 
 function createScene() {
+
+    
     distance = 0;
     clock = new THREE.Clock();
     clock.start();
@@ -49,15 +59,33 @@ function createScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(sceneWidth, sceneHeight);
     document.body.appendChild(renderer.domElement);
+
+    const listener = new THREE.AudioListener();
+    camera.add(listener);
+
+    
+    //theto (add rain sound)
+    const rainSound = new THREE.Audio(listener);
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('cold-snowfall-ambience-5-minutes-sound-effect-164512.mp3', function(buffer) {
+        rainSound.setBuffer(buffer);
+        rainSound.setLoop(true);
+        rainSound.setVolume(0.4);
+        rainSound.play();
+    });
     
     addRoad();
     addHero();
     addLight();
     addSideTrees();
-    addSideWaterfalls(); // Add waterfalls along the sides
+    //addSideWaterfalls(); // Add waterfalls along the sides
 
     //theto (add railings to scene)
     addSideRailings();
+
+    //thet(add rain)
+    createRain();
+    createLightning();
     
     camera.position.set(0, 4, 8);
     camera.lookAt(0, 0, 0);
@@ -150,11 +178,12 @@ function addRoad() {
         roadSegments.push(roadSegment);
     }
 
+    //theto (changed from sand to water)
     const sandWidth = 50;
     const sandLength = 200;
     const sandSegments = 5; 
     
-    // Natural sand color variations
+    // Natural water color variations
     const sandColors = [
         0x556B2F, 
         0x6B8E23, 
@@ -189,31 +218,82 @@ function addRoad() {
         sandGeometry.attributes.position.needsUpdate = true;
         sandGeometry.computeVertexNormals();
         
-        const sandMaterial = new THREE.MeshLambertMaterial({ 
-            color: sandColor,
-            transparent: false
+        const waterMaterial = new THREE.MeshPhongMaterial({
+
+            color: 0x1E90FF,       
+            transparent: true,
+            opacity: 0.7,
+            shininess: 100,        
+            side: THREE.DoubleSide
         });
+
+
+       
         
-        //left side sand
-        const leftSandSegment = new THREE.Mesh(sandGeometry, sandMaterial);
-        leftSandSegment.rotation.x = -Math.PI / 2;
-        leftSandSegment.position.x = -(roadWidth / 2 + sandWidth / 2);
-        leftSandSegment.position.y = -0.02;
-        leftSandSegment.position.z = -i * (sandLength / sandSegments);
-        leftSandSegment.receiveShadow = true;
-        scene.add(leftSandSegment);
         
-        //right side sand
-        const rightSandSegment = new THREE.Mesh(sandGeometry.clone(), sandMaterial.clone());
-        rightSandSegment.rotation.x = -Math.PI / 2;
-        rightSandSegment.position.x = (roadWidth / 2 + sandWidth / 2);
-        rightSandSegment.position.y = -0.02;
-        rightSandSegment.position.z = -i * (sandLength / sandSegments);
-        rightSandSegment.receiveShadow = true;
-        scene.add(rightSandSegment);
+        const leftWaterSegment = new THREE.Mesh(sandGeometry, waterMaterial);
+        leftWaterSegment.rotation.x = -Math.PI / 2;
+        leftWaterSegment.position.x = -(roadWidth / 2 + sandWidth / 2);
+        leftWaterSegment.position.y = -0.02;
+        leftWaterSegment.position.z = -i * (sandLength / sandSegments);
+        leftWaterSegment.receiveShadow = true;
+        scene.add(leftWaterSegment);
+
+        const rightWaterSegment = new THREE.Mesh(sandGeometry.clone(), waterMaterial.clone());
+        rightWaterSegment.rotation.x = -Math.PI / 2;
+        rightWaterSegment.position.x = (roadWidth / 2 + sandWidth / 2);
+        rightWaterSegment.position.y = -0.02;
+        rightWaterSegment.position.z = -i * (sandLength / sandSegments);
+        rightWaterSegment.receiveShadow = true;
+        scene.add(rightWaterSegment);
+
+        // save them to animate later
+        waterSegments.push(leftWaterSegment, rightWaterSegment);
     }
 
     addBeachDetails();
+}
+
+function createRain() {
+    rainGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(rainCount * 3);
+    rainVelocities = new Float32Array(rainCount);
+
+    // populate positions and velocities
+    for (let i = 0; i < rainCount; i++) {
+        const x = Math.random() * 400 - 200;
+        const y = Math.random() * 800;
+        const z = Math.random() * 400 - 200;
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        // vertical fall speed for each drop
+        rainVelocities[i] = 0.5 + Math.random() * 0.9;
+    }
+
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    rainMaterial = new THREE.PointsMaterial({
+        color: 0x99bbff,
+        size: 0.05,
+        transparent: false,
+        opacity: 0.1,
+        sizeAttenuation: true,
+        depthWrite: false
+    });
+
+    rain = new THREE.Points(rainGeo, rainMaterial);
+    rain.frustumCulled = false;
+    scene.add(rain);
+}
+
+// Create a point light used for lightning flashes
+function createLightning() {
+    flash = new THREE.PointLight(0xBFE9FF, 0, 300); 
+    flash.position.set(0, 200, -50);
+    scene.add(flash);
 }
 
 function addBeachDetails() {
@@ -655,6 +735,21 @@ function update() {
             railing.position.z-=1000;
         }
     })
+
+    waterSegments.forEach((segment, index) => {
+        const positions = segment.geometry.attributes.position.array;
+        const time = performance.now() * 0.001;
+        
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = positions[i];
+            const z = positions[i + 2];
+            positions[i + 1] = Math.sin(x * 0.1 + time) * 0.1 + Math.cos(z * 0.1 + time) * 0.1;
+        }
+
+        segment.geometry.attributes.position.needsUpdate = true;
+        segment.geometry.computeVertexNormals();
+    });
+
     
     // Move trees to create infinite forest effect
     treeGroups.forEach(tree => {
@@ -697,6 +792,36 @@ function update() {
             pool.material.opacity = 0.6 + Math.sin(distance * 8) * 0.2;
         }
     });
+
+    if (rain && rainGeo) {
+    const positions = rainGeo.attributes.position.array;
+    const dropFactor = 60 * deltaTime; // scale by frame time
+
+    for (let i = 0; i < rainCount; i++) {
+        const idx = i * 3 + 1; // y coordinate
+        positions[idx] -= rainVelocities[i] * 500 * deltaTime; // smooth fall speed
+
+        // reset drop when below ground
+        if (positions[idx] < -60) {
+            positions[i * 3] = Math.random() * 400 - 200;       // x reset
+            positions[idx] = Math.random() * 300 + 200;         // y reset above
+            positions[i * 3 + 2] = Math.random() * 400 - 200;   // z reset
+        }
+    }
+
+    rainGeo.attributes.position.needsUpdate = true;
+}
+
+    // ----- lightning flashes -----
+    if (flash) {
+        // rare chance to trigger a flash
+        if (Math.random() > 0.997) {
+            flash.intensity = 6 + Math.random() * 10;
+            flash.position.set(Math.random() * 200 - 100, 150 + Math.random() * 100, Math.random() * 200 - 100);
+        }
+        // gradually decay intensity
+        flash.intensity = Math.max(0, flash.intensity - 40 * deltaTime);
+    }
     
     // Update camera to follow slightly
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
