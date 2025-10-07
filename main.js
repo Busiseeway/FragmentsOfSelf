@@ -59,7 +59,7 @@ function createScene() {
     addHero();
     addLight();
     addSideTrees();
-    addObstacles();
+    //addObstacles();
     addEmotions();
     addSideWaterfalls(); // Add waterfalls along the sides
     
@@ -350,28 +350,68 @@ function addLight() {
 //mukondi
 function addObstacles(){
     //they should only cross the path when the hero is approaching them
-    for (let i=0;i<10;i++){
-        const leftTreeType = Math.floor(Math.random() * 4);
-        const obsTree = createTree(leftTreeType);
-        obsTree.position.x =  Math.random() * 10;
-        obsTree.position.z = -i * 20 + Math.random() * 8;
-        obsTree.position.y = 0;
+    
+        const TreeType = Math.floor(Math.random() * 4);
+        const obsTree = createTree(TreeType);
+        obsTree.name = 'obsTree';
+        // obsTree.position.x =  Math.random() * 10;
+        // obsTree.position.z = -i * 20 + Math.random() * 8;
+        // obsTree.position.y = 0;
+
+        // Pick a random lane
+        const lanes = [leftLane, middleLane, rightLane];
+        const lane = lanes[Math.floor(Math.random() * lanes.length)];
+
+    // Position the obstacle above road so it can "fall"
+        obsTree.position.set(lane, 6, heroSphere.position.z - 30);
+
+
+        obsTree.castShadow = true;
+        obsTree.receiveShadow = true;
         scene.add(obsTree);
         obstacles.push(obsTree);
 
-    }
-    //I want these to  be rolling from left to right
+    
+   
+}
+//got code from Pabi
+function spawnBoulder() {
+    const lanes = [leftLane, middleLane, rightLane];
+    const radius = 0.7; // size of boulder
+    const geometry = new THREE.SphereGeometry(radius, 16, 16);
+    const material = new THREE.MeshStandardMaterial({ color: 0x555555 });
+    const boulder = new THREE.Mesh(geometry, material);
+    boulder.name = 'boulder';
+
+   // Pick a random lane
+    
+    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+
+    // Position the obstacle above road so it can "fall"
+    boulder.position.set(lane, 6, heroSphere.position.z - 30);
+
+    boulder.castShadow = true;
+    boulder.receiveShadow = true;
+
+    scene.add(boulder);
+    obstacles.push(boulder);
+}
+function addRollingLogs(){
+ //I want these to  be rolling from left to right
     //Disappear them when they are no longer on the road
-    for(let j=0;j<10;j++){
-        const geometry = new THREE.CylinderGeometry( 0.3, 0.3, 3, 20 ); 
-        const material = new THREE.MeshBasicMaterial( {color: 0xffff00} ); 
-        const cylinder = new THREE.Mesh( geometry, material ); 
-        cylinder.position.x = j*8+Math.random() * 10;
-        cylinder.position.z =  Math.random() * 8;
-        cylinder.position.y = 0;
-        scene.add( cylinder );
-        obstacles.push(cylinder);
-    }
+   
+        const logGeometry = new THREE.CylinderGeometry( 0.3, 0.3, 3, 20 ); 
+        const logMaterial = new THREE.MeshBasicMaterial( {color: 0xffff00} ); 
+        const log = new THREE.Mesh( logGeometry, logMaterial ); 
+        log.position.x = 5+Math.random() * 10;
+        log.position.z =  -20+Math.random() * 8;
+        log.name = 'log';
+        // cylinder.position.y = 0;
+        log.castShadow=true;
+        log.receiveShadow = true;
+        scene.add( log );
+        obstacles.push(log);
+    
 }
 function addEmotions(){
     //add them as the scene refreshes
@@ -461,7 +501,7 @@ function createTree(treeType = 0) {
             for (let i = 0; i < 3; i++) {
                 const leavesGeometry = new THREE.SphereGeometry(1.2, 10, 8);
                 const leavesMaterial = new THREE.MeshLambertMaterial({ 
-                    color: new THREE.Color().setHSL(0.33 + Math.random() * 0.05, 0.7, 0.4 + Math.random() * 0.2) 
+                    color: new THREE.Color().setHSL(0.33 + Math.random() * 0.05, 0.3, 0.4 + Math.random() * 0.2) 
                 });
                 const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
                 leaves.position.set(
@@ -480,7 +520,7 @@ function createTree(treeType = 0) {
             for (let i = 0; i < 4; i++) {
                 const coneGeometry = new THREE.ConeGeometry(1.5 - i * 0.3, 1.5, 8);
                 const coneMaterial = new THREE.MeshLambertMaterial({ 
-                    color: new THREE.Color().setHSL(0.33, 0.6, 0.3 + i * 0.05) 
+                    color: new THREE.Color().setHSL(0.33, 0.25, 0.3 + i * 0.05) 
                 });
                 const cone = new THREE.Mesh(coneGeometry, coneMaterial);
                 cone.position.y = 1.5 + i * 1.0;
@@ -497,7 +537,7 @@ function createTree(treeType = 0) {
             for (let i = 0; i < 6; i++) {
                 const frondGeometry = new THREE.PlaneGeometry(0.2, 2.5);
                 const frondMaterial = new THREE.MeshLambertMaterial({ 
-                    color: 0x32CD32, side: THREE.DoubleSide 
+                    color: '#395b39', side: THREE.DoubleSide 
                 });
                 const frond = new THREE.Mesh(frondGeometry, frondMaterial);
                 frond.position.y = 4;
@@ -518,7 +558,7 @@ function createTree(treeType = 0) {
 
             const ovalLeavesGeometry = new THREE.SphereGeometry(1.2, 10, 8);
             ovalLeavesGeometry.scale(1, 1.5, 1);
-            const ovalLeavesMaterial = new THREE.MeshLambertMaterial({ color: 0x006400 });
+            const ovalLeavesMaterial = new THREE.MeshLambertMaterial({ color: '#002100' });
             const ovalLeaves = new THREE.Mesh(ovalLeavesGeometry, ovalLeavesMaterial);
             ovalLeaves.position.y = 6;
             ovalLeaves.castShadow = true;
@@ -638,6 +678,30 @@ function createWaterfall() {
     return waterfall;
 }
 
+//from pabi
+function checkCollisions() {
+    const heroBB = new THREE.Box3().setFromObject(heroSphere);
+
+    for (let i = 0; i < obstacles.length; i++) {
+        const obsBB = new THREE.Box3().setFromObject(obstacles[i]);
+        if (heroBB.intersectsBox(obsBB)) {
+            alert("Game Over!");
+            resetGame();
+            return;
+        }
+    }
+}
+
+function resetGame() {
+    // remove all obstacles
+    obstacles.forEach(o => scene.remove(o));
+    obstacles = [];
+    currentLane = middleLane;
+    heroSphere.position.set(currentLane, heroBaseY, 0);
+    distance = 0;
+}
+
+
 function update() {
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
@@ -645,11 +709,72 @@ function update() {
     // Update hero rolling animation
     heroSphere.rotation.x += heroRollingSpeed * deltaTime;
 
+     // Move trees to create infinite forest effect
+    treeGroups.forEach(tree => {
+        tree.position.z += rollingSpeed;
+        if (tree.position.z > 20) {
+            tree.position.z -= 200;
+        }
+    });
+
     //update cylinder rolling
-    obstacles.forEach(obstacle =>{
-        obstacle.position.x -= (rollingSpeed*2); //rolling to the side but I want them to repeat
-        obstacle.position.z -= (rollingSpeed*0.5);
-    })
+    // obstacles.forEach(obstacle =>{
+        
+    // })
+      //pabii
+    // Spawn random obstacle (low probability each frame)
+    if (Math.random() < 0.01) { // adjust 0.01 to control frequency
+        const choice = Math.random();
+        if (choice < 0.4) {
+            addRollingLogs();   // log
+
+        } else if (choice < 0.7) {
+            spawnBoulder();  // trees
+
+        } else {
+           // spawnBoulder();    // rolling boulder
+        }
+    }
+        // Move and animate obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        //console.log(obs);
+        // Logs (cylinders)
+        if (obs.name==="boulder") {
+           // console.log(obs);
+          
+           // Falling effect until it hits the ground
+            if (obs.position.y > heroBaseY) {
+                obs.position.y -= 0.1;
+            }
+            obs.position.z += rollingSpeed;
+            // // Make log roll
+            // obs.rotation.x += 0.1;
+        }
+
+        // // Barricades (boxes) - they just sit still (no animation needed)
+
+        // // Boulders (spheres) - roll faster than road
+        
+         else if(obs.name==="log"){
+        obs.position.x -= (rollingSpeed*0.8); //rolling to the side but I want them to repeat
+        obs.position.z += (rollingSpeed*1.5);
+       // obs.position.z -= (rollingSpeed*1.5);
+        }
+        else{
+            // Logs + barricades move at normal road speed
+            obs.position.z += rollingSpeed;
+        }
+
+        // Remove obstacle if it goes past the camera
+         if (obs.position.z > 10) {
+            scene.remove(obs);
+            obstacles.splice(i, 1);
+        }
+    }
+
+    //check collision
+    checkCollisions();
     // Smooth lane changing
     heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
     
@@ -681,13 +806,7 @@ function update() {
         }
     });
     
-    // Move trees to create infinite forest effect
-    treeGroups.forEach(tree => {
-        tree.position.z += rollingSpeed;
-        if (tree.position.z > 20) {
-            tree.position.z -= 200;
-        }
-    });
+   
 
     // Move waterfalls to create infinite effect
     waterfalls.forEach(waterfall => {
