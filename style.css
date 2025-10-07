@@ -44,14 +44,14 @@ canvas {
     margin-top: 4px;
 }
 
-/* Pause all styling */
+/* Pause button styling */
 #pause-btn {
     position: fixed;
     top: 10px;
     right: 10px;
     padding: 10px 15px;
-    background-color: #333;
-    color: white;
+    background-color: white;
+    color: #333;
     border: none;
     border-radius: 5px;
     cursor: pointer;
