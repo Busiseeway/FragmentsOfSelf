@@ -2,7 +2,9 @@
 import { 
   addRollingLogs,
   spawnBoulder,
-  checkObsCollisions
+  checkObsCollisions,
+  updateObstacles,
+  clearObstacles
 } from './obstaclesL_1.js';
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
 import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
@@ -70,6 +72,8 @@ function createScene() {
     //addObstacles();
     addEmotions(scene);
     addSideWaterfalls(); // Add waterfalls along the sides
+    addHearts();
+    clock = new THREE.Clock();
     
     camera.position.set(0, 4, 8);
     camera.lookAt(0, 0, 0);
@@ -638,14 +642,7 @@ function createWaterfall() {
 
 
 
-function resetGame() {
-    // remove all obstacles
-    obstacles.forEach(o => scene.remove(o));
-    obstacles = [];
-    currentLane = middleLane;
-    heroSphere.position.set(currentLane, heroBaseY, 0);
-    distance = 0;
-}
+
 
 
 function update() {
@@ -689,55 +686,19 @@ function update() {
     if (Math.random() < 0.01) { // adjust 0.01 to control frequency
         const choice = Math.random();
         if (choice < 0.4) {
-            addRollingLogs();   // log
+            addRollingLogs(scene);   // log
 
         } else if (choice < 0.7) {
-            spawnBoulder(heroSphere);  // trees
+            spawnBoulder(scene,heroSphere,leftLane,middleLane,rightLane);  // trees
 
         } else {
            // spawnBoulder();    // rolling boulder
         }
     }
-        // Move and animate obstacles
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        const obs = obstacles[i];
-        //console.log(obs);
-        // Logs (cylinders)
-        if (obs.name==="boulder") {
-           // console.log(obs);
-          
-           // Falling effect until it hits the ground
-            if (obs.position.y > heroBaseY) {
-                obs.position.y -= 0.1;
-            }
-            obs.position.z += rollingSpeed;
-            // // Make log roll
-            // obs.rotation.x += 0.1;
-        }
-
-        // // Barricades (boxes) - they just sit still (no animation needed)
-
-        // // Boulders (spheres) - roll faster than road
-        
-         else if(obs.name==="log"){
-        obs.position.x -= (rollingSpeed*0.6); //rolling to the side but I want them to repeat
-        obs.position.z += (rollingSpeed*1.25);
-       // obs.position.z -= (rollingSpeed*1.5);
-        }
-        else{
-            // Logs + barricades move at normal road speed
-            obs.position.z += rollingSpeed;
-        }
-
-        // Remove obstacle if it goes past the camera
-         if (obs.position.z > 10) {
-            scene.remove(obs);
-            obstacles.splice(i, 1);
-        }
-    }
-
+   //update obstacles
+    updateObstacles(scene, rollingSpeed,heroBaseY);
     //check collision
-    checkObsCollisions();
+    checkCollisions(heroSphere, heroBaseY, scene);
     // Smooth lane changing
     heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
     
@@ -851,3 +812,22 @@ function onWindowResize() {
     camera.aspect = sceneWidth / sceneHeight;
     camera.updateProjectionMatrix();
 }
+function resetGame() {
+    // Clear all obstacles
+    clearObstacles(scene);
+    
+    // Reset hero position
+    currentLane = middleLane;
+    heroSphere.position.set(currentLane, heroBaseY, 0);
+    
+    // Reset game variables
+    distance = 0;
+    score = 0;
+    document.getElementById("score").textContent = "Score: " + score;
+    
+    // Reset clock
+    lastObstacleTime = clock.getElapsedTime();
+}
+
+// Export resetGame if needed elsewhere
+export { resetGame };

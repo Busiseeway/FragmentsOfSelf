@@ -3,6 +3,7 @@ import {
   addRollingLogs,
   spawnBoulder,
   checkObsCollisions
+  ,getObstacles
 } from './obstaclesL_1.js';
 
 let hearts = [];
@@ -51,18 +52,20 @@ export function addHearts(count = 5) {
 
 
 export function checkCollisions(heroSphere, heroBaseY, scene) {
+  
   if (!canTakeDamage) return;
 
   // Use the collision detection from obstaclesL3.js
   if (checkObsCollisions(heroSphere)) {
     const currentTime = Date.now();
-    
+    console.log("collisin");
     // Ensure we don't process the same collision multiple times
     if (currentTime - lastCollisionTime > 100) { // 100ms debounce
       handleCollision(heroSphere, heroBaseY, scene);
       lastCollisionTime = currentTime;
     }
   }
+  
 }
 
 function handleCollision(heroSphere, heroBaseY, scene) {

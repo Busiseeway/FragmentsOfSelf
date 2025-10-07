@@ -1,6 +1,6 @@
-import * as THREE from 'three';
 
-export function addRollingLogs(){
+let obstacles = [];
+export function addRollingLogs(scene){
  //I want these to  be rolling from left to right
     //Disappear them when they are no longer on the road
 
@@ -26,7 +26,7 @@ export function addRollingLogs(){
     
 }
 //got code from Pabi
-export function spawnBoulder(heroSphere) {
+export function spawnBoulder(scene,heroSphere,leftLane,middleLane,rightLane) {
     const lanes = [leftLane, middleLane, rightLane];
     const radius = 0.7; // size of boulder
     const geometry = new THREE.SphereGeometry(radius, 16, 16);
@@ -49,13 +49,67 @@ export function spawnBoulder(heroSphere) {
 }
 //from pabi
 export function checkObsCollisions(heroSphere) {
-    const heroBB = new THREE.Box3().setFromObject(heroSphere);
+    
 
     for (let i = 0; i < obstacles.length; i++) {
-        const obsBB = new THREE.Box3().setFromObject(obstacles[i]);
-        if (heroBB.intersectsBox(obsBB)) {
-            
-            return true;
-        }
+        const obs = obstacles[i];
+    
+    // Calculate distance between hero and obstacle
+    const dx = heroSphere.position.x - obs.position.x;
+    const dy = heroSphere.position.y - obs.position.y;
+    const dz = heroSphere.position.z - obs.position.z;
+    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    //console.log(distance);
+    if (distance<=1){
+        return true;
     }
+    }
+    return false;
+}
+// Helper exports
+export function getObstacles() {
+  return obstacles;
+}
+export function updateObstacles(scene, rollingSpeed,heroBaseY){
+         // Move and animate obstacles
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const obs = obstacles[i];
+            //console.log(obs);
+            // Logs (cylinders)
+            if (obs.name==="boulder") {
+               // console.log(obs);
+              
+               // Falling effect until it hits the ground
+                if (obs.position.y > heroBaseY) {
+                    obs.position.y -= 0.1;
+                }
+                obs.position.z += rollingSpeed;
+                // // Make log roll
+                // obs.rotation.x += 0.1;
+            }
+    
+            // // Barricades (boxes) - they just sit still (no animation needed)
+    
+            // // Boulders (spheres) - roll faster than road
+            
+             else if(obs.name==="log"){
+            obs.position.x -= (rollingSpeed*0.6); //rolling to the side but I want them to repeat
+            obs.position.z += (rollingSpeed*1.25);
+           // obs.position.z -= (rollingSpeed*1.5);
+            }
+            else{
+                // Logs + barricades move at normal road speed
+                obs.position.z += rollingSpeed;
+            }
+    
+            // Remove obstacle if it goes past the camera
+             if (obs.position.z > 10) {
+                scene.remove(obs);
+                obstacles.splice(i, 1);
+            }
+        }
+}
+export function clearObstacles(scene) {
+  obstacles.forEach(obj => scene.remove(obj));
+  obstacles = [];
 }
