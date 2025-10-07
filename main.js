@@ -9,13 +9,7 @@ import { addSideTrees, treeGroups } from './trees.js';
 import { addSideWaterfalls, waterfalls } from './waterfalls.js'; 
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
 import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
-import { 
-  spawnLog, 
-  spawnBarricade,
-  spawnHole,
-  updateObstacles,
-  clearObstacles
-} from './obstaclesL3.js';
+import { spawnLog, spawnBarricade,spawnHole, updateObstacles, clearObstacles} from './obstaclesL3.js';
 
 let rollingSpeed = 0.1;
 let heroRollingSpeed;
@@ -64,6 +58,37 @@ function init() {
     document.addEventListener('keydown', handleKeyDown);
 
     update();
+}
+
+
+function setupPauseControls() {
+    pauseButton = document.getElementById('pause-btn');
+
+
+    if (pauseButton) {
+        pauseButton.addEventListener('click', togglePause);
+    } else {
+        console.error('Pause button not found!');
+    }
+
+    if (resumeButton) {
+        resumeButton.addEventListener('click', togglePause);
+    }
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+
+    if (isPaused) {
+        pauseButton.textContent = 'Resume';
+        console.log('Game Paused');
+    } else {
+        pauseButton.textContent = 'Pause';
+        console.log('Game Resumed');
+
+        // Reset the clock to prevent time jumps
+        clock.getDelta();
+    }
 }
 
 function handleKeyDown(keyEvent) {
@@ -245,7 +270,6 @@ function update() {
                 scene.add(emotion);
             }
         }
-            }
         });
     
     // Check health bar collisions
