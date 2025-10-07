@@ -1,3 +1,6 @@
+//Mmakwena
+
+let mixer;
 //mukondi
 
 let sceneWidth, sceneHeight;
@@ -106,21 +109,42 @@ function handleKeyDown(keyEvent) {
   
 
 function addHero() {
-    const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
-    const sphereMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4A90E2,
-        flatShading: true,
-        metalness: 0.3,
-        roughness: 0.4
-    });
-    
-    heroSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    heroSphere.receiveShadow = true;
-    heroSphere.castShadow = true;
-    scene.add(heroSphere);
-    heroSphere.position.y = heroBaseY;
-    heroSphere.position.z = 0;
-    heroSphere.position.x = currentLane;
+    // const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
+    // const sphereMaterial = new THREE.MeshStandardMaterial({
+    //     color: 0x4A90E2,
+    //     flatShading: true,
+    //     metalness: 0.3,
+    //     roughness: 0.4
+    // });
+    var loader = new THREE.GLTFLoader();
+    loader.load('CGVCharacter.glb', function(gltf){
+       
+        heroSphere = gltf.scene;
+        heroSphere.scale.set(0.1,0.1,0.1);
+        heroSphere.position.set(currentLane, heroBaseY, 0);
+        heroSphere.receiveShadow = true;
+        heroSphere.castShadow=true;
+        scene.add(heroSphere);
+        heroSphere.position.y = heroBaseY;
+        heroSphere.position.z = 0;
+        heroSphere.position.x = currentLane;
+
+        // if(gltf.animations && gltf.animations.length >0){
+        //     mixer = new THREE.AnimationMixer(heroSphere);
+        //     const action = mixer.clipAction(gltf.animations[0]);
+        //     action.play();
+        // }
+    },undefined, function(error){
+        console.error(error);
+    })
+    //update();
+    // heroSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    // heroSphere.receiveShadow = true;
+    // heroSphere.castShadow = true;
+    // scene.add(heroSphere);
+    // heroSphere.position.y = heroBaseY;
+    // heroSphere.position.z = 0;
+    // heroSphere.position.x = currentLane;
 }
 
 function addRoad() {
@@ -641,9 +665,9 @@ function createWaterfall() {
 function update() {
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
-    
+    if(heroSphere){
     // Update hero rolling animation
-    heroSphere.rotation.x += heroRollingSpeed * deltaTime;
+    //heroSphere.rotation.x += heroRollingSpeed * deltaTime;
 
     //update cylinder rolling
     obstacles.forEach(obstacle =>{
@@ -725,7 +749,7 @@ function update() {
     
     // Update camera to follow slightly
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
-    
+}
     render();
     requestAnimationFrame(update);
 }
