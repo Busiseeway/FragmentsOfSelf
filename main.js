@@ -1,3 +1,5 @@
+//mukondi
+
 let sceneWidth, sceneHeight;
 let camera, scene, renderer;
 let sun, road, heroSphere;
@@ -12,8 +14,13 @@ let rightLane = 2;
 let middleLane = 0;
 let currentLane = middleLane;
 let clock;
+var score;
+var scoreText;
+var hasCollided;
 let distance = 0;
 let roadSegments = [];
+let obstacles = [];
+let emotions = [];
 let treeGroups = [];
 let waterfalls = [];
 
@@ -52,11 +59,25 @@ function createScene() {
     addHero();
     addLight();
     addSideTrees();
+    addObstacles();
+    addEmotions();
     addSideWaterfalls(); // Add waterfalls along the sides
     
     camera.position.set(0, 4, 8);
     camera.lookAt(0, 0, 0);
     
+	scoreText = document.createElement('div');
+	scoreText.style.position = 'absolute';
+	//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+	scoreText.style.width = 200;
+	scoreText.style.height = 200;
+	scoreText.style.backgroundColor = "yellow";
+	scoreText.innerHTML = "0";
+	scoreText.style.top = 50 + 'px';
+	scoreText.style.left = 10 + 'px';
+	document.body.appendChild(scoreText);
+
+
     window.addEventListener('resize', onWindowResize, false);
     document.addEventListener('keydown', handleKeyDown);
 }
@@ -304,14 +325,19 @@ function createRealisticStone() {
 }
 
 function addLight() {
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
     scene.add(hemisphereLight);
     
-    sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun = new THREE.DirectionalLight(707070, 0.2);
     sun.position.set(10, 10, 5);
     sun.castShadow = true;
     scene.add(sun);
     
+    const color = 808080;
+    const intensity = 0.5;
+    const light = new THREE.AmbientLight(color, intensity);
+    scene.add(light);
+
     sun.shadow.mapSize.width = 2048;
     sun.shadow.mapSize.height = 2048;
     sun.shadow.camera.near = 0.5;
@@ -320,6 +346,43 @@ function addLight() {
     sun.shadow.camera.right = 20;
     sun.shadow.camera.top = 20;
     sun.shadow.camera.bottom = -20;
+}
+//mukondi
+function addObstacles(){
+    //they should only cross the path when the hero is approaching them
+    for (let i=0;i<10;i++){
+        const leftTreeType = Math.floor(Math.random() * 4);
+        const obsTree = createTree(leftTreeType);
+        obsTree.position.x =  Math.random() * 10;
+        obsTree.position.z = -i * 20 + Math.random() * 8;
+        obsTree.position.y = 0;
+        scene.add(obsTree);
+        obstacles.push(obsTree);
+
+    }
+    //I want these to  be rolling from left to right
+    //Disappear them when they are no longer on the road
+    for(let j=0;j<10;j++){
+        const geometry = new THREE.CylinderGeometry( 0.3, 0.3, 3, 20 ); 
+        const material = new THREE.MeshBasicMaterial( {color: 0xffff00} ); 
+        const cylinder = new THREE.Mesh( geometry, material ); 
+        cylinder.position.x = j*8+Math.random() * 10;
+        cylinder.position.z =  Math.random() * 8;
+        cylinder.position.y = 0;
+        scene.add( cylinder );
+        obstacles.push(cylinder);
+    }
+}
+function addEmotions(){
+    //add them as the scene refreshes
+        const geometry = new THREE.CylinderGeometry( 0.2, 0.2, 1, 20 ); 
+        const material = new THREE.MeshBasicMaterial( {color: 0xffffff} ); 
+        const emotion = new THREE.Mesh( geometry, material ); 
+        emotion.position.x = 16+Math.random() * 10;
+        emotion.position.z =  Math.random() * 8;
+        emotion.position.y = 0;
+        scene.add( emotion );
+        emotions.push(emotion);
 }
 
 function addSideTrees() {
@@ -581,7 +644,12 @@ function update() {
     
     // Update hero rolling animation
     heroSphere.rotation.x += heroRollingSpeed * deltaTime;
-    
+
+    //update cylinder rolling
+    obstacles.forEach(obstacle =>{
+        obstacle.position.x -= (rollingSpeed*2); //rolling to the side but I want them to repeat
+        obstacle.position.z -= (rollingSpeed*0.5);
+    })
     // Smooth lane changing
     heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
     
