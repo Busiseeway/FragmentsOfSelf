@@ -17,6 +17,9 @@ let roadSegments = [];
 let treeGroups = [];
 let waterfalls = [];
 
+//pabi
+let obstacles = [];
+
 //theto
 let jump_can=1;
 let velocity_y=0;
@@ -54,7 +57,7 @@ function createScene() {
     
     camera = new THREE.PerspectiveCamera(60, sceneWidth / sceneHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setClearColor(0x87CEEB, 1);
+    renderer.setClearColor(0x121B20, 1);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(sceneWidth, sceneHeight);
@@ -93,6 +96,69 @@ function createScene() {
     window.addEventListener('resize', onWindowResize, false);
     document.addEventListener('keydown', handleKeyDown);
 }
+
+//pabi. 3 obstacles. spawnObstacle(), spawnBarricade(), spawnBoulder()
+function spawnObstacle() {
+    // A simple log (cylinder lying on the road)
+    const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 8);
+    const logMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    const log = new THREE.Mesh(logGeometry, logMaterial);
+
+    log.rotation.z = Math.PI / 2; // lay it flat
+
+    // Pick a random lane
+    const lanes = [leftLane, middleLane, rightLane];
+    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+
+    // Position the obstacle above road so it can "fall"
+    log.position.set(lane, 6, heroSphere.position.z - 30);
+
+    log.castShadow = true;
+    log.receiveShadow = true;
+
+    scene.add(log);
+    obstacles.push(log);
+}
+
+function spawnBarricade() {
+    const lanes = [leftLane, rightLane]; // spans 2 lanes
+    const geometry = new THREE.BoxGeometry(3, 1, 0.5);  
+    //   width=2 (x) , height=1 (y), depth=0.5 (z)
+    const material = new THREE.MeshStandardMaterial({ color: 0x8B0000 });
+    const barricade = new THREE.Mesh(geometry, material);
+
+    // Position between two lanes
+    barricade.position.x = (lanes[0] + lanes[1]) / 2;  
+    barricade.position.y = heroBaseY + 0.5; // half its height
+    barricade.position.z = -100;
+
+    barricade.castShadow = true;
+    barricade.receiveShadow = true;
+
+    scene.add(barricade);
+    obstacles.push(barricade);
+}
+
+function spawnBoulder() {
+    const lanes = [leftLane, middleLane, rightLane];
+    const radius = 0.7; // size of boulder
+    const geometry = new THREE.SphereGeometry(radius, 16, 16);
+    const material = new THREE.MeshStandardMaterial({ color: 0x555555 });
+    const boulder = new THREE.Mesh(geometry, material);
+
+    // Place in a random lane
+    boulder.position.x = lanes[Math.floor(Math.random() * lanes.length)];
+    boulder.position.y = heroBaseY + radius;
+    boulder.position.z = -100;
+
+    boulder.castShadow = true;
+    boulder.receiveShadow = true;
+
+    scene.add(boulder);
+    obstacles.push(boulder);
+}
+
+
 
 function handleKeyDown(keyEvent) {
     if (keyEvent.keyCode === 37) { // left
@@ -268,14 +334,14 @@ function createRain() {
         positions[i * 3 + 2] = z;
 
         // vertical fall speed for each drop
-        rainVelocities[i] = 0.5 + Math.random() * 0.9;
+        rainVelocities[i] = 0.2 + Math.random() * 0.1;
     }
 
     rainGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
     rainMaterial = new THREE.PointsMaterial({
-        color: 0x99bbff,
-        size: 0.05,
+        color: 0xffffff,
+        size: 0.3,
         transparent: false,
         opacity: 0.1,
         sizeAttenuation: true,
@@ -688,6 +754,31 @@ function createWaterfall() {
     return waterfall;
 }
 
+//pabi
+function checkCollisions() {
+    const heroBB = new THREE.Box3().setFromObject(heroSphere);
+
+    for (let i = 0; i < obstacles.length; i++) {
+        const obsBB = new THREE.Box3().setFromObject(obstacles[i]);
+        if (heroBB.intersectsBox(obsBB)) {
+            alert("Game Over!");
+            resetGame();
+            return;
+        }
+    }
+}
+
+function resetGame() {
+    // remove all obstacles
+    obstacles.forEach(o => scene.remove(o));
+    obstacles = [];
+    currentLane = middleLane;
+    heroSphere.position.set(currentLane, heroBaseY, 0);
+    distance = 0;
+}
+
+
+
 function update() {
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
@@ -821,6 +912,55 @@ function update() {
         flash.intensity = Math.max(0, flash.intensity - 40 * deltaTime);
     }
     
+
+    //pabii
+    // Spawn random obstacle (low probability each frame)
+    if (Math.random() < 0.01) { // adjust 0.01 to control frequency
+        const choice = Math.random();
+        if (choice < 0.4) {
+            spawnObstacle();   // log
+        } else if (choice < 0.7) {
+            spawnBarricade();  // barricade
+        } else {
+            spawnBoulder();    // rolling boulder
+        }
+    }
+
+    // Move and animate obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+
+        // Logs (cylinders)
+        if (obs.geometry.type === "CylinderGeometry") {
+            // Falling effect until it hits the ground
+            if (obs.position.y > heroBaseY) {
+                obs.position.y -= 0.1;
+            }
+            // Make log roll
+            obs.rotation.x += 0.1;
+        }
+
+        // Barricades (boxes) - they just sit still (no animation needed)
+
+        // Boulders (spheres) - roll faster than road
+        if (obs.geometry.type === "SphereGeometry") {
+            obs.rotation.x += 0.2; // spin forward
+            obs.position.z += rollingSpeed * 1.5; // faster than road
+        } else {
+            // Logs + barricades move at normal road speed
+            obs.position.z += rollingSpeed;
+        }
+
+        // Remove obstacle if it goes past the camera
+        if (obs.position.z > 10) {
+            scene.remove(obs);
+            obstacles.splice(i, 1);
+        }
+    }
+
+    // Check collisions
+    checkCollisions();
+
     // Update camera to follow slightly
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
     
