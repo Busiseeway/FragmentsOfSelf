@@ -30,7 +30,7 @@ let rainParticles=[];
 let flash;
 let rain;
 let rainMaterial, rainVelocities;
-let rainCount = 3900000;
+let rainCount = 30000;
 let waterSegments = []; 
 
 
