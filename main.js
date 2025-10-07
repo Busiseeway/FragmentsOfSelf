@@ -27,6 +27,11 @@ let currentLane = middleLane;
 let clock;
 let distance = 0;
 let score = 0;
+let isPaused = false;
+let pauseButton;
+let resumeButton;
+let sceneWidth = window.innerWidth;
+let sceneHeight = window.innerHeight;
 
 // Jump variables
 let jump_can = 1;
@@ -53,6 +58,8 @@ function init() {
     addHearts();
     clock = new THREE.Clock();
 
+    setupPauseControls();
+
     window.addEventListener('resize', onWindowResize);
     document.addEventListener('keydown', handleKeyDown);
 
@@ -72,9 +79,21 @@ function handleKeyDown(keyEvent) {
         jump_can = 0;
         velocity_y = 16;
     }
+
+    else if (keyEvent.keyCode === 32) { // spacebar
+        keyEvent.preventDefault(); // Prevent page scrolling
+        togglePause();
+    }
 }
 
 function update() {
+
+    if (isPaused) {
+        render();
+        requestAnimationFrame(update);
+        return;
+    }
+
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
 
@@ -226,7 +245,8 @@ function update() {
                 scene.add(emotion);
             }
         }
-    });
+            }
+        });
     
     // Check health bar collisions
     checkCollisions(heroSphere, heroBaseY, scene);
