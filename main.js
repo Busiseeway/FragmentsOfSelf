@@ -11,7 +11,7 @@ import { addEmotions, emotions, emotionTypes } from './emotions.js';
 import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade,spawnHole, updateObstacles, clearObstacles} from './obstaclesL3.js';
 
-let rollingSpeed = 0.1;
+let rollingSpeed = 0.5;
 let heroRollingSpeed;
 let bounceValue = 0.02;
 let leftLane = -2;
@@ -121,6 +121,7 @@ function update() {
 
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
+    if(heroSphere){
 
     const elapsed = clock.getElapsedTime();
     
@@ -147,7 +148,7 @@ function update() {
     updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere);
     
     // Update hero rolling animation
-    heroSphere.rotation.x += heroRollingSpeed * deltaTime;
+    //heroSphere.rotation.x += heroRollingSpeed * deltaTime;
     
     // Smooth lane changing
     heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
@@ -274,7 +275,7 @@ function update() {
     
     // Check health bar collisions
     checkCollisions(heroSphere, heroBaseY, scene);
-
+    }
     
     
     render();
