@@ -3,18 +3,23 @@ import * as THREE from 'three';
 import { createScene, scene, camera, renderer } from './scene.js';
 import { addLight } from './lights.js';
 import { addHero, heroSphere, heroBaseY } from './hero.js';
-import { addRoad, roadSegments } from './road.js';
+import { addRoad, roadSegments, sideRocks } from './road.js';
 import { addBeach } from './beach.js'; 
 import { addSideTrees, treeGroups } from './trees.js'; 
 import { addSideWaterfalls, waterfalls } from './waterfalls.js'; 
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
+import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
+import { 
+  spawnLog, 
+  spawnBarricade,
+  spawnHole,
+  updateObstacles,
+  clearObstacles
+} from './obstaclesL3.js';
 
-
-let road;
-let rollingSpeed = 0.3;
+let rollingSpeed = 0.1;
 let heroRollingSpeed;
 let bounceValue = 0.02;
-let gravity = 0.002;
 let leftLane = -2;
 let rightLane = 2;
 let middleLane = 0;
@@ -28,9 +33,13 @@ let resumeButton;
 let sceneWidth = window.innerWidth;
 let sceneHeight = window.innerHeight;
 
-//theto - jump variables
+// Jump variables
 let jump_can = 1;
 let velocity_y = 0;
+
+// Obstacle spawning
+let lastObstacleTime = 0;
+const obstacleInterval = 2; // seconds between obstacle spawns
 
 init();
 
@@ -46,7 +55,7 @@ function init() {
     addSideTrees(scene);
     addSideWaterfalls(scene);
     addEmotions(scene);
-
+    addHearts();
     clock = new THREE.Clock();
 
     setupPauseControls();
@@ -55,36 +64,6 @@ function init() {
     document.addEventListener('keydown', handleKeyDown);
 
     update();
-}
-
-function setupPauseControls() {
-    pauseButton = document.getElementById('pause-btn');
-
-
-    if (pauseButton) {
-        pauseButton.addEventListener('click', togglePause);
-    } else {
-        console.error('Pause button not found!');
-    }
-
-    if (resumeButton) {
-        resumeButton.addEventListener('click', togglePause);
-    }
-}
-
-function togglePause() {
-    isPaused = !isPaused;
-    
-    if (isPaused) {
-        pauseButton.textContent = 'Resume';
-        console.log('Game Paused');
-    } else {
-        pauseButton.textContent = 'Pause';
-        console.log('Game Resumed');
-        
-        // Reset the clock to prevent time jumps
-        clock.getDelta();
-    }
 }
 
 function handleKeyDown(keyEvent) {
@@ -96,9 +75,7 @@ function handleKeyDown(keyEvent) {
         if (currentLane < rightLane) {
             currentLane += 2;
         }
-    }
-    // Add jump functionality back
-    else if (keyEvent.keyCode === 38 && jump_can == 1) { //up
+    } else if (keyEvent.keyCode === 38 && jump_can == 1) { // up arrow - jump
         jump_can = 0;
         velocity_y = 16;
     }
@@ -119,6 +96,30 @@ function update() {
 
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
+
+    const elapsed = clock.getElapsedTime();
+    
+    // Spawn obstacles at regular intervals
+    if (elapsed - lastObstacleTime > obstacleInterval) {
+        const obstacleType = Math.floor(Math.random() * 5); // 0-4 for 5 different obstacles
+
+        switch (obstacleType) {
+            case 0:
+                spawnLog(scene, heroSphere, leftLane, middleLane, rightLane);
+                break;
+            case 1:
+                spawnBarricade(scene, heroBaseY, leftLane, rightLane);
+                break;
+            case 2:
+                spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane);
+                break;
+        }
+
+        lastObstacleTime = elapsed;
+    }
+
+    // Update all obstacles (movement and animation)
+    updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere);
     
     // Update hero rolling animation
     heroSphere.rotation.x += heroRollingSpeed * deltaTime;
@@ -148,6 +149,15 @@ function update() {
             segment.position.z -= roadSegments.length * 20;
         }
     });
+
+    if (typeof sideRocks !== 'undefined') {
+        sideRocks.forEach(rock => {
+            rock.position.z += rollingSpeed;
+            if (rock.position.z > 20) {
+                rock.position.z -= roadSegments.length * 20; // wrap around with road
+            }
+        });
+    }
     
     // Move trees to create infinite forest effect
     treeGroups.forEach(tree => {
@@ -194,41 +204,57 @@ function update() {
     // Update camera to follow slightly
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
 
+    // Update emotions (collectibles)
     emotions.forEach(emotion => {
-    if (!emotion.userData.collected) {
-        emotion.position.z += rollingSpeed; // move towards player
+        if (!emotion.userData.collected) {
+            emotion.position.z += rollingSpeed; // move towards player
 
-        // Collision detection (simple distance check)
-        const dx = heroSphere.position.x - emotion.position.x;
-        const dy = heroSphere.position.y - emotion.position.y;
-        const dz = heroSphere.position.z - emotion.position.z;
-        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            // Collision detection (simple distance check)
+            const dx = heroSphere.position.x - emotion.position.x;
+            const dy = heroSphere.position.y - emotion.position.y;
+            const dz = heroSphere.position.z - emotion.position.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-        if (dist < 1) { // collision radius
-            // Add the emotion's score but prevent going below 0
-            score = Math.max(0, score + emotion.userData.score);
-            document.getElementById("score").textContent = "Score: " + score;
-            
-            const scoreChange = emotion.userData.score > 0 ? "+" : "";
-            console.log("Collected " + emotion.userData.type + "! " + scoreChange + emotion.userData.score + " Score: " + score);
+            if (dist < 1) { // collision radius
+                score += 10;
+                document.getElementById("score").textContent = "Score: " + score;
+                console.log("Collected " + emotion.userData.type + "! Score: " + score);
 
-            // Reset emotion immediately after collection
-            const lanes = [-2, 0, 2];
-            emotion.position.x = lanes[Math.floor(Math.random() * 3)];
-            emotion.position.z = -200 - Math.random() * 200;
-            emotion.userData.collected = false;
+                // Reset emotion immediately after collection
+                const lanes = [-2, 0, 2];
+                emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+                emotion.position.z = -200 - Math.random() * 200;
+                emotion.userData.collected = false;
 
-            const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
-            emotion.material.map = newType.texture; // Update texture instead of color
-            emotion.userData.type = newType.name;
-            emotion.userData.score = newType.score; // Update score
+                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+                emotion.material.color.set(newType.color);
+                emotion.userData.type = newType.name;
+            }
+
+            // Reset if emotion goes behind hero
+            if (emotion.position.z > 10) {
+                const lanes = [-2, 0, 2];
+                emotion.position.x = lanes[Math.floor(Math.random() * 3)]; // pick random lane
+                emotion.position.z = -200 - Math.random() * 200; // random depth
+                emotion.userData.collected = false;
+
+                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+                emotion.material.color.set(newType.color);
+                emotion.userData.type = newType.name;
+
+                scene.add(emotion);
+            }
         }
             }
         });
     
+    // Check health bar collisions
+    checkCollisions(heroSphere, heroBaseY, scene);
+
+    
+    
     render();
     requestAnimationFrame(update);
-
 }
 
 function render() {
@@ -236,9 +262,29 @@ function render() {
 }
 
 function onWindowResize() {
-    sceneHeight = window.innerHeight;
-    sceneWidth = window.innerWidth;
+    const sceneHeight = window.innerHeight;
+    const sceneWidth = window.innerWidth;
     renderer.setSize(sceneWidth, sceneHeight);
     camera.aspect = sceneWidth / sceneHeight;
     camera.updateProjectionMatrix();
 }
+
+function resetGame() {
+    // Clear all obstacles
+    clearObstacles(scene);
+    
+    // Reset hero position
+    currentLane = middleLane;
+    heroSphere.position.set(currentLane, heroBaseY, 0);
+    
+    // Reset game variables
+    distance = 0;
+    score = 0;
+    document.getElementById("score").textContent = "Score: " + score;
+    
+    // Reset clock
+    lastObstacleTime = clock.getElapsedTime();
+}
+
+// Export resetGame if needed elsewhere
+export { resetGame };

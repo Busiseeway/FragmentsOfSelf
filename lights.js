@@ -3,10 +3,10 @@ import * as THREE from 'three';
 let sun;
 
 export function addLight(scene) {
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
     scene.add(hemisphereLight);
     
-    sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun = new THREE.DirectionalLight(0xffffff, 2);
     sun.position.set(10, 10, 5);
     sun.castShadow = true;
     scene.add(sun);
