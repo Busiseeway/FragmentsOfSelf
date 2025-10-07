@@ -1,7 +1,7 @@
 let sceneWidth, sceneHeight;
 let camera, scene, renderer;
 let sun, road, heroSphere;
-let rollingSpeed = 0.1;
+let rollingSpeed = 0.5;
 let heroRollingSpeed;
 let heroRadius = 0.3;
 let heroBaseY = 0.5;
@@ -27,7 +27,7 @@ let rainParticles=[];
 let flash;
 let rain;
 let rainMaterial, rainVelocities;
-let rainCount = 3900000;
+let rainCount = 30000;
 let waterSegments = []; 
 
 
@@ -70,7 +70,7 @@ function createScene() {
     audioLoader.load('cold-snowfall-ambience-5-minutes-sound-effect-164512.mp3', function(buffer) {
         rainSound.setBuffer(buffer);
         rainSound.setLoop(true);
-        rainSound.setVolume(0.4);
+        rainSound.setVolume(6.6);
         rainSound.play();
     });
     
@@ -182,8 +182,6 @@ function addRoad() {
     const sandWidth = 50;
     const sandLength = 200;
     const sandSegments = 5; 
-    
-    // Natural water color variations
     const sandColors = [
         0x556B2F, 
         0x6B8E23, 
@@ -247,7 +245,7 @@ function addRoad() {
         rightWaterSegment.receiveShadow = true;
         scene.add(rightWaterSegment);
 
-        // save them to animate later
+       
         waterSegments.push(leftWaterSegment, rightWaterSegment);
     }
 
