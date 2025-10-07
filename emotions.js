@@ -5,14 +5,14 @@ const loader = new THREE.TextureLoader();
 
 // Define textures for each emotion with their score values
 const emotionTypes = [
-  { texture: loader.load('textures/angry.png'), name: "Anger", score: -20 },
-  { texture: loader.load('textures/sad.png'), name: "Sad", score: -10 },
-  { texture: loader.load('textures/sick.png'), name: "Sick", score: -20 },
-  { texture: loader.load('textures/scared.png'), name: "Scared", score: -10 },
-  { texture: loader.load('textures/happy.png'), name: "Happy", score: 20 },
-  { texture: loader.load('textures/love.png'), name: "Love", score: 25 },
-  { texture: loader.load('textures/shy.png'), name: "Shy", score: 10 },
-  { texture: loader.load('textures/proud.png'), name: "Proud", score: 15 }
+  { texture: loader.load('assets/textures/angry.png'), name: "Anger", score: -20 },
+  { texture: loader.load('assets/textures/sad.png'), name: "Sad", score: -10 },
+  { texture: loader.load('assets/textures/sick.png'), name: "Sick", score: -20 },
+  { texture: loader.load('assets/textures/scared.png'), name: "Scared", score: -10 },
+  { texture: loader.load('assets/textures/happy.png'), name: "Happy", score: 20 },
+  { texture: loader.load('assets/textures/love.png'), name: "Love", score: 25 },
+  { texture: loader.load('assets/textures/shy.png'), name: "Shy", score: 10 },
+  { texture: loader.load('assets/textures/proud.png'), name: "Proud", score: 15 }
 ];
 
 export function addEmotions(scene) {
