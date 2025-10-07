@@ -1,9 +1,17 @@
 //mukondi
+import { 
+  addRollingLogs,
+  spawnBoulder,
+  checkObsCollisions
+} from './obstaclesL_1.js';
+import { addEmotions, emotions, emotionTypes } from './emotions.js';
+import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
+
 
 let sceneWidth, sceneHeight;
 let camera, scene, renderer;
 let sun, road, heroSphere;
-let rollingSpeed = 0.1;
+let rollingSpeed = 0.25;
 let heroRollingSpeed;
 let heroRadius = 0.3;
 let heroBaseY = 0.5;
@@ -14,13 +22,13 @@ let rightLane = 2;
 let middleLane = 0;
 let currentLane = middleLane;
 let clock;
-var score;
+var score=0;
 var scoreText;
 var hasCollided;
 let distance = 0;
 let roadSegments = [];
 let obstacles = [];
-let emotions = [];
+
 let treeGroups = [];
 let waterfalls = [];
 
@@ -60,22 +68,22 @@ function createScene() {
     addLight();
     addSideTrees();
     //addObstacles();
-    addEmotions();
+    addEmotions(scene);
     addSideWaterfalls(); // Add waterfalls along the sides
     
     camera.position.set(0, 4, 8);
     camera.lookAt(0, 0, 0);
     
-	scoreText = document.createElement('div');
-	scoreText.style.position = 'absolute';
-	//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-	scoreText.style.width = 200;
-	scoreText.style.height = 200;
-	scoreText.style.backgroundColor = "yellow";
-	scoreText.innerHTML = "0";
-	scoreText.style.top = 50 + 'px';
-	scoreText.style.left = 10 + 'px';
-	document.body.appendChild(scoreText);
+	// score = document.createElement('div');
+	// score.style.position = 'absolute';
+	// //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+	// score.style.width = 200;
+	// score.style.height = 200;
+	// score.style.backgroundColor = "yellow";
+	// score.innerHTML = "0";
+	// score.style.top = 50 + 'px';
+	// score.style.left = 10 + 'px';
+	// document.body.appendChild(score);
 
 
     window.addEventListener('resize', onWindowResize, false);
@@ -101,9 +109,6 @@ function handleKeyDown(keyEvent) {
         }
        
     }
-
-
-  
 
 function addHero() {
     const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
@@ -374,56 +379,9 @@ function addObstacles(){
     
    
 }
-//got code from Pabi
-function spawnBoulder() {
-    const lanes = [leftLane, middleLane, rightLane];
-    const radius = 0.7; // size of boulder
-    const geometry = new THREE.SphereGeometry(radius, 16, 16);
-    const material = new THREE.MeshStandardMaterial({ color: 0x555555 });
-    const boulder = new THREE.Mesh(geometry, material);
-    boulder.name = 'boulder';
 
-   // Pick a random lane
-    
-    const lane = lanes[Math.floor(Math.random() * lanes.length)];
 
-    // Position the obstacle above road so it can "fall"
-    boulder.position.set(lane, 6, heroSphere.position.z - 30);
 
-    boulder.castShadow = true;
-    boulder.receiveShadow = true;
-
-    scene.add(boulder);
-    obstacles.push(boulder);
-}
-function addRollingLogs(){
- //I want these to  be rolling from left to right
-    //Disappear them when they are no longer on the road
-   
-        const logGeometry = new THREE.CylinderGeometry( 0.3, 0.3, 3, 20 ); 
-        const logMaterial = new THREE.MeshBasicMaterial( {color: 0xffff00} ); 
-        const log = new THREE.Mesh( logGeometry, logMaterial ); 
-        log.position.x = 5+Math.random() * 10;
-        log.position.z =  -20+Math.random() * 8;
-        log.name = 'log';
-        // cylinder.position.y = 0;
-        log.castShadow=true;
-        log.receiveShadow = true;
-        scene.add( log );
-        obstacles.push(log);
-    
-}
-function addEmotions(){
-    //add them as the scene refreshes
-        const geometry = new THREE.CylinderGeometry( 0.2, 0.2, 1, 20 ); 
-        const material = new THREE.MeshBasicMaterial( {color: 0xffffff} ); 
-        const emotion = new THREE.Mesh( geometry, material ); 
-        emotion.position.x = 16+Math.random() * 10;
-        emotion.position.z =  Math.random() * 8;
-        emotion.position.y = 0;
-        scene.add( emotion );
-        emotions.push(emotion);
-}
 
 function addSideTrees() {
     // Add variety of trees along the sides of the road
@@ -678,19 +636,7 @@ function createWaterfall() {
     return waterfall;
 }
 
-//from pabi
-function checkCollisions() {
-    const heroBB = new THREE.Box3().setFromObject(heroSphere);
 
-    for (let i = 0; i < obstacles.length; i++) {
-        const obsBB = new THREE.Box3().setFromObject(obstacles[i]);
-        if (heroBB.intersectsBox(obsBB)) {
-            alert("Game Over!");
-            resetGame();
-            return;
-        }
-    }
-}
 
 function resetGame() {
     // remove all obstacles
@@ -717,6 +663,23 @@ function update() {
         }
     });
 
+     //theto (jump animation when up key is pressed)
+    if (jump_can === 0) {
+    heroSphere.position.y += velocity_y * deltaTime;
+    velocity_y -= 45 * deltaTime; 
+
+        if (heroSphere.position.y <= heroBaseY) {
+            heroSphere.position.y = heroBaseY;
+            velocity_y = 0;
+            jump_can = 1; 
+        }
+    } 
+    
+    else {
+        
+        heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+    }
+
     //update cylinder rolling
     // obstacles.forEach(obstacle =>{
         
@@ -729,7 +692,7 @@ function update() {
             addRollingLogs();   // log
 
         } else if (choice < 0.7) {
-            spawnBoulder();  // trees
+            spawnBoulder(heroSphere);  // trees
 
         } else {
            // spawnBoulder();    // rolling boulder
@@ -757,8 +720,8 @@ function update() {
         // // Boulders (spheres) - roll faster than road
         
          else if(obs.name==="log"){
-        obs.position.x -= (rollingSpeed*0.8); //rolling to the side but I want them to repeat
-        obs.position.z += (rollingSpeed*1.5);
+        obs.position.x -= (rollingSpeed*0.6); //rolling to the side but I want them to repeat
+        obs.position.z += (rollingSpeed*1.25);
        // obs.position.z -= (rollingSpeed*1.5);
         }
         else{
@@ -774,29 +737,14 @@ function update() {
     }
 
     //check collision
-    checkCollisions();
+    checkObsCollisions();
     // Smooth lane changing
     heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
     
     // Add subtle bouncing
     //heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
 
-    //theto (jump animation when up key is pressed)
-    if (jump_can === 0) {
-    heroSphere.position.y += velocity_y * deltaTime;
-    velocity_y -= 45 * deltaTime; 
-
-        if (heroSphere.position.y <= heroBaseY) {
-            heroSphere.position.y = heroBaseY;
-            velocity_y = 0;
-            jump_can = 1; 
-        }
-    } 
-    
-    else {
-        
-        heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
-    }
+   
     
     // Move road segments to create infinite road effect
     roadSegments.forEach(segment => {
@@ -845,6 +793,49 @@ function update() {
     // Update camera to follow slightly
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
     
+ emotions.forEach(emotion => {
+        if (!emotion.userData.collected) {
+            emotion.position.z += rollingSpeed*0.8; // move towards player
+
+            // Collision detection (simple distance check)
+            const dx = heroSphere.position.x - emotion.position.x;
+            const dy = heroSphere.position.y - emotion.position.y;
+            const dz = heroSphere.position.z - emotion.position.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+            if (dist < 1) { // collision radius
+                score += 10;
+                document.getElementById("score").textContent = "Score: " + score;
+                console.log("Collected " + emotion.userData.type + "! Score: " + score);
+
+                // Reset emotion immediately after collection
+                const lanes = [-2, 0, 2];
+                emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+                emotion.position.z = -200 - Math.random() * 200;
+                emotion.userData.collected = false;
+
+                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+                emotion.material.color.set(newType.color);
+                emotion.userData.type = newType.name;
+            }
+
+
+            // Reset if emotion goes behind hero
+            if (emotion.position.z > 10) {
+                const lanes = [-2, 0, 2];
+                emotion.position.x = lanes[Math.floor(Math.random() * 3)]; // pick random lane
+                emotion.position.z = -200 - Math.random() * 200; // random depth
+                emotion.userData.collected = false;
+
+                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+                emotion.material.color.set(newType.color);
+                emotion.userData.type = newType.name;
+
+                scene.add(emotion);
+            }
+        }
+    });
+
     render();
     requestAnimationFrame(update);
 }
