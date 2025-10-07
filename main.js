@@ -10,6 +10,7 @@ import { addSideWaterfalls, waterfalls } from './waterfalls.js';
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
 import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade,spawnHole, updateObstacles, clearObstacles} from './obstaclesL3.js';
+import { addSounds, sounds } from './sounds.js'; 
 
 let rollingSpeed = 0.1;
 let heroRollingSpeed;
@@ -50,6 +51,7 @@ function init() {
     addSideWaterfalls(scene);
     addEmotions(scene);
     addHearts();
+    addSounds(scene, camera);
     clock = new THREE.Clock();
 
     setupPauseControls();
