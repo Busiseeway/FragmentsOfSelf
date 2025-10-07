@@ -11,7 +11,7 @@ import { addEmotions, emotions, emotionTypes } from './emotions.js';
 
 
 let road;
-let rollingSpeed = 0.1;
+let rollingSpeed = 0.3;
 let heroRollingSpeed;
 let bounceValue = 0.02;
 let gravity = 0.002;
@@ -22,6 +22,11 @@ let currentLane = middleLane;
 let clock;
 let distance = 0;
 let score = 0;
+let isPaused = false;
+let pauseButton;
+let resumeButton;
+let sceneWidth = window.innerWidth;
+let sceneHeight = window.innerHeight;
 
 //theto - jump variables
 let jump_can = 1;
@@ -44,13 +49,43 @@ function init() {
 
     clock = new THREE.Clock();
 
+    setupPauseControls();
+
     window.addEventListener('resize', onWindowResize);
     document.addEventListener('keydown', handleKeyDown);
 
     update();
 }
 
+function setupPauseControls() {
+    pauseButton = document.getElementById('pause-btn');
 
+
+    if (pauseButton) {
+        pauseButton.addEventListener('click', togglePause);
+    } else {
+        console.error('Pause button not found!');
+    }
+
+    if (resumeButton) {
+        resumeButton.addEventListener('click', togglePause);
+    }
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+    
+    if (isPaused) {
+        pauseButton.textContent = 'Resume';
+        console.log('Game Paused');
+    } else {
+        pauseButton.textContent = 'Pause';
+        console.log('Game Resumed');
+        
+        // Reset the clock to prevent time jumps
+        clock.getDelta();
+    }
+}
 
 function handleKeyDown(keyEvent) {
     if (keyEvent.keyCode === 37) { // left
@@ -67,9 +102,21 @@ function handleKeyDown(keyEvent) {
         jump_can = 0;
         velocity_y = 16;
     }
+
+    else if (keyEvent.keyCode === 32) { // spacebar
+        keyEvent.preventDefault(); // Prevent page scrolling
+        togglePause();
+    }
 }
 
 function update() {
+
+    if (isPaused) {
+        render();
+        requestAnimationFrame(update);
+        return;
+    }
+
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
     
@@ -147,48 +194,37 @@ function update() {
     // Update camera to follow slightly
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
 
-     emotions.forEach(emotion => {
-        if (!emotion.userData.collected) {
-            emotion.position.z += rollingSpeed; // move towards player
+    emotions.forEach(emotion => {
+    if (!emotion.userData.collected) {
+        emotion.position.z += rollingSpeed; // move towards player
 
-            // Collision detection (simple distance check)
-            const dx = heroSphere.position.x - emotion.position.x;
-            const dy = heroSphere.position.y - emotion.position.y;
-            const dz = heroSphere.position.z - emotion.position.z;
-            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        // Collision detection (simple distance check)
+        const dx = heroSphere.position.x - emotion.position.x;
+        const dy = heroSphere.position.y - emotion.position.y;
+        const dz = heroSphere.position.z - emotion.position.z;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-            if (dist < 1) { // collision radius
-                score += 10;
-                document.getElementById("score").textContent = "Score: " + score;
-                console.log("Collected " + emotion.userData.type + "! Score: " + score);
+        if (dist < 1) { // collision radius
+            // Add the emotion's score but prevent going below 0
+            score = Math.max(0, score + emotion.userData.score);
+            document.getElementById("score").textContent = "Score: " + score;
+            
+            const scoreChange = emotion.userData.score > 0 ? "+" : "";
+            console.log("Collected " + emotion.userData.type + "! " + scoreChange + emotion.userData.score + " Score: " + score);
 
-                // Reset emotion immediately after collection
-                const lanes = [-2, 0, 2];
-                emotion.position.x = lanes[Math.floor(Math.random() * 3)];
-                emotion.position.z = -200 - Math.random() * 200;
-                emotion.userData.collected = false;
+            // Reset emotion immediately after collection
+            const lanes = [-2, 0, 2];
+            emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+            emotion.position.z = -200 - Math.random() * 200;
+            emotion.userData.collected = false;
 
-                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
-                emotion.material.color.set(newType.color);
-                emotion.userData.type = newType.name;
-            }
-
-
-            // Reset if emotion goes behind hero
-            if (emotion.position.z > 10) {
-                const lanes = [-2, 0, 2];
-                emotion.position.x = lanes[Math.floor(Math.random() * 3)]; // pick random lane
-                emotion.position.z = -200 - Math.random() * 200; // random depth
-                emotion.userData.collected = false;
-
-                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
-                emotion.material.color.set(newType.color);
-                emotion.userData.type = newType.name;
-
-                scene.add(emotion);
-            }
+            const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+            emotion.material.map = newType.texture; // Update texture instead of color
+            emotion.userData.type = newType.name;
+            emotion.userData.score = newType.score; // Update score
         }
-    });
+            }
+        });
     
     render();
     requestAnimationFrame(update);
