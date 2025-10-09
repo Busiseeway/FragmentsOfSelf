@@ -8,11 +8,11 @@ import { addBeach } from './beach.js';
 import { addSideTrees, treeGroups } from './trees.js'; 
 import { addSideWaterfalls, waterfalls } from './waterfalls.js'; 
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
-import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
-import { spawnLog, spawnBarricade,spawnHole, updateObstacles, clearObstacles} from './obstaclesL3.js';
+import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty } from './healthBar.js';
+import { spawnLog, spawnBarricade,spawnHole, updateObstacles, clearObstacles, spawnRollingSphere} from './obstaclesL3.js';
 import { addSounds, sounds } from './sounds.js'; 
 
-let rollingSpeed = 0.1;
+let rollingSpeed = 0.6;
 let heroRollingSpeed;
 let bounceValue = 0.02;
 let leftLane = -2;
@@ -31,6 +31,7 @@ let sceneHeight = window.innerHeight;
 // Jump variables
 let jump_can = 1;
 let velocity_y = 0;
+let velocity_z = 0;
 
 // Obstacle spawning
 let lastObstacleTime = 0;
@@ -83,33 +84,53 @@ function togglePause() {
 
     if (isPaused) {
         pauseButton.textContent = 'Resume';
+        clock.stop();
         console.log('Game Paused');
     } else {
         pauseButton.textContent = 'Pause';
+        clock.start();
         console.log('Game Resumed');
 
         // Reset the clock to prevent time jumps
-        clock.getDelta();
+        // clock.getDelta();
     }
 }
 
 function handleKeyDown(keyEvent) {
-    if (keyEvent.keyCode === 37) { // left
+    // if (isPaused) return;
+
+    // Left Arrow
+    if (keyEvent.keyCode === 37) {
         if (currentLane > leftLane) {
             currentLane -= 2;
+        } else {
+            // Already at leftmost lane
+            takeLanePenalty(heroSphere,-1);
         }
-    } else if (keyEvent.keyCode === 39) { // right
-        if (currentLane < rightLane) {
-            currentLane += 2;
-        }
-    } else if (keyEvent.keyCode === 38 && jump_can == 1) { // up arrow - jump
-        jump_can = 0;
-        velocity_y = 16;
     }
 
-    else if (keyEvent.keyCode === 32) { // spacebar
-        keyEvent.preventDefault(); // Prevent page scrolling
+    // Right Arrow
+    else if (keyEvent.keyCode === 39) {
+        if (currentLane < rightLane) {
+            currentLane += 2;
+        } else {
+            // Already at rightmost lane
+            takeLanePenalty(heroSphere, 1);
+        }
+    }
+
+    // Up Arrow — Jump
+    else if (keyEvent.keyCode === 38 && jump_can === 1) {
+        jump_can = 0;
+        velocity_y = 16;
+        velocity_z = -1;
+    }
+
+    // Spacebar — Pause
+    else if (keyEvent.keyCode === 32) {
+        keyEvent.preventDefault();
         togglePause();
+        return;
     }
 }
 
@@ -128,7 +149,7 @@ function update() {
     
     // Spawn obstacles at regular intervals
     if (elapsed - lastObstacleTime > obstacleInterval) {
-        const obstacleType = Math.floor(Math.random() * 5); // 0-4 for 5 different obstacles
+        const obstacleType = Math.floor(Math.random() * 6);
 
         switch (obstacleType) {
             case 0:
@@ -139,6 +160,9 @@ function update() {
                 break;
             case 2:
                 spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane);
+                break;
+            case 3: 
+                spawnRollingSphere(scene, leftLane, middleLane, rightLane); 
                 break;
         }
 
@@ -157,6 +181,7 @@ function update() {
     // Jump animation when up key is pressed
     if (jump_can === 0) {
         heroSphere.position.y += velocity_y * deltaTime;
+        heroSphere.position.z += velocity_z * deltaTime; // forward movement
         velocity_y -= 45 * deltaTime; 
 
         if (heroSphere.position.y <= heroBaseY) {

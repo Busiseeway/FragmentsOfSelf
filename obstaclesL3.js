@@ -2,6 +2,33 @@ import * as THREE from 'three';
 
 let obstacles = [];
 
+export function spawnRollingSphere(scene, leftLane, middleLane, rightLane) {
+    const lanes = [leftLane, middleLane, rightLane];
+    const radius = 0.5;
+
+    lanes.forEach(lane => {
+        const geometry = new THREE.DodecahedronGeometry(radius, 2);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            flatShading: true,
+            metalness: 0.3,
+            roughness: 0.4
+        });
+
+        const rollingSphere = new THREE.Mesh(geometry, material);
+        rollingSphere.castShadow = true;
+        rollingSphere.receiveShadow = true;
+        rollingSphere.userData.type = 'rollingSphere';
+        rollingSphere.userData.radius = radius;
+
+        rollingSphere.position.set(lane, radius, -75); // start far ahead
+        scene.add(rollingSphere);
+        obstacles.push(rollingSphere);
+    });
+}
+
+
+
 export function spawnLog(scene, heroSphere, leftLane, middleLane, rightLane) {
   const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 8);
   const logMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
@@ -164,6 +191,12 @@ export function updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere) {
       case 'barricade':
         obs.position.z += rollingSpeed;
         break;
+
+      case 'rollingSphere':
+          obs.position.z += rollingSpeed * 3; // move toward player
+          obs.rotation.x += 0.3; // rolling animation
+          obs.rotation.z += 0.2;
+          break;
         
       case 'hole':
       default:
@@ -207,6 +240,11 @@ export function checkObstacleCollision(heroSphere, heroBaseY) {
           continue; // Skip collision if jumping over hole
         }
         break;
+
+      case 'rollingSphere':
+        collisionRadius = obs.userData.radius + 0.3; // sum of radii
+        break;
+
     }
     
     if (distance < collisionRadius) {

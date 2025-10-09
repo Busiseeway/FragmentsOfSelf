@@ -20,7 +20,6 @@ export function addHearts(count = 5) {
 
   for (let i = 0; i < count; i++) {
     const type = heartTypes[0];
-
     const heart = document.createElement('div');
     heart.className = 'heart';
     heart.innerHTML = type.symbol;
@@ -30,12 +29,8 @@ export function addHearts(count = 5) {
     heart.style.cursor = 'pointer';
 
     // Hover effect
-    heart.addEventListener('mouseenter', () => {
-      heart.style.transform = 'scale(1.2)';
-    });
-    heart.addEventListener('mouseleave', () => {
-      heart.style.transform = 'scale(1)';
-    });
+    heart.addEventListener('mouseenter', () => (heart.style.transform = 'scale(1.2)'));
+    heart.addEventListener('mouseleave', () => (heart.style.transform = 'scale(1)'));
 
     heartsContainer.appendChild(heart);
     hearts.push(heart);
@@ -44,71 +39,91 @@ export function addHearts(count = 5) {
   document.body.appendChild(heartsContainer);
 }
 
+function takeDamage(heroSphere, heroBaseY, scene) {
+  if (!canTakeDamage) return;
 
+  removeHeart();
+  canTakeDamage = false;
+
+  // Flash red briefly
+  const originalColor = heroSphere.material.color.getHex();
+  heroSphere.material.color.setHex(0xff0000);
+  setTimeout(() => heroSphere.material.color.setHex(originalColor), 200);
+
+  // Reset hero position (prevent floating)
+  heroSphere.position.y = heroBaseY;
+
+  // Re-enable damage after cooldown
+  setTimeout(() => (canTakeDamage = true), damageCooldown);
+
+  if (getRemainingHearts() === 0) {
+    gameOver();
+  }
+}
+
+//For obstacles
 export function checkCollisions(heroSphere, heroBaseY, scene) {
   if (!canTakeDamage) return;
 
-  // Use the collision detection from obstaclesL3.js
   if (checkObstacleCollision(heroSphere, heroBaseY)) {
     const currentTime = Date.now();
-    
-    // Ensure we don't process the same collision multiple times
-    if (currentTime - lastCollisionTime > 100) { // 100ms debounce
-      handleCollision(heroSphere, heroBaseY, scene);
+    if (currentTime - lastCollisionTime > 100) {
+      const obstacles = getObstacles();
+
+      // Find and remove obstacle that was hit
+      for (let i = 0; i < obstacles.length; i++) {
+        const obs = obstacles[i];
+        const dx = heroSphere.position.x - obs.position.x;
+        const dy = heroSphere.position.y - obs.position.y;
+        const dz = heroSphere.position.z - obs.position.z;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (distance < 1.2) {
+          scene.remove(obs);
+          obstacles.splice(i, 1);
+          break;
+        }
+      }
+
+      takeDamage(heroSphere, heroBaseY, scene);
       lastCollisionTime = currentTime;
     }
   }
 }
 
-function handleCollision(heroSphere, heroBaseY, scene) {
-  // Get obstacles array and find which one we hit
-  const obstacles = getObstacles();
-  let hitObstacle = null;
+//hitting edges
+export function takeLanePenalty(heroSphere, direction) {
+  console.log("Boundary hit! Lost a heart.");
 
-  // Find the closest obstacle that we're colliding with
-  for (let i = 0; i < obstacles.length; i++) {
-    const obs = obstacles[i];
-    const dx = heroSphere.position.x - obs.position.x;
-    const dy = heroSphere.position.y - obs.position.y;
-    const dz = heroSphere.position.z - obs.position.z;
-    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    
-    if (distance < 1.5) { // Close enough to be the collision
-      hitObstacle = obs;
-      break;
-    }
-  }
-
-  // Remove the obstacle that was hit
-  if (hitObstacle && hitObstacle.parent) {
-    scene.remove(hitObstacle);
-    const index = obstacles.indexOf(hitObstacle);
-    if (index > -1) {
-      obstacles.splice(index, 1);
-    }
-  }
-
-  // Remove a heart
   removeHeart();
 
-  // Trigger invulnerability for a short period
-  canTakeDamage = false;
-  setTimeout(() => {
-    canTakeDamage = true;
-  }, damageCooldown);
-
-  // Reset hero Y position to ground
-  heroSphere.position.y = heroBaseY;
-
-  // Visual feedback - make hero flash
+  // Flash red
   const originalColor = heroSphere.material.color.getHex();
-  heroSphere.material.color.setHex(0xff0000); // Flash red
-  setTimeout(() => {
-    heroSphere.material.color.setHex(originalColor);
-  }, 200);
+  heroSphere.material.color.setHex(0xff0000);
+  setTimeout(() => heroSphere.material.color.setHex(originalColor), 200);
 
-  //Game over
-  if (getRemainingHearts() === 0) {
+  // Bounce effect (visual feedback)
+  const originalX = heroSphere.position.x;
+  let velocity = direction * 0.3;
+  let damping = 0.85;
+  let oscillations = 0;
+
+  function animateShock() {
+    heroSphere.position.x += velocity;
+    velocity *= -damping;
+    oscillations++;
+    if (Math.abs(velocity) > 0.01 && oscillations < 10) {
+      requestAnimationFrame(animateShock);
+    } else {
+      heroSphere.position.x = originalX;
+    }
+  }
+
+  animateShock();
+
+  const remaining = getRemainingHearts();
+  if (remaining <= 0) {
+    console.log("No hearts left — triggering Game Over!");
     gameOver();
   }
 }
@@ -116,7 +131,6 @@ function handleCollision(heroSphere, heroBaseY, scene) {
 export function removeHeart() {
   if (hearts.length > 0) {
     const heart = hearts.pop();
-
     heart.style.opacity = '0';
     heart.style.transform = 'scale(1.5) rotate(20deg)';
     setTimeout(() => heart.remove(), 500);
@@ -128,22 +142,14 @@ export function getRemainingHearts() {
 }
 
 export function resetHearts() {
-  // Remove all existing hearts from DOM
-  hearts.forEach(heart => heart.remove());
+  hearts.forEach(h => h.remove());
   hearts = [];
-  
-  // Remove container if it exists
   const container = document.getElementById('hearts-container');
-  if (container) {
-    container.remove();
-  }
-  
-  // Re-add hearts
+  if (container) container.remove();
   addHearts(5);
 }
 
-function gameOver() {
-  // Create game over overlay
+export function gameOver() {
   const overlay = document.createElement('div');
   overlay.style.position = 'fixed';
   overlay.style.top = '0';
@@ -181,16 +187,9 @@ function gameOver() {
   restartButton.style.borderRadius = '10px';
   restartButton.style.cursor = 'pointer';
   restartButton.style.transition = 'background-color 0.3s';
-
-  restartButton.addEventListener('mouseenter', () => {
-    restartButton.style.backgroundColor = '#ff6666';
-  });
-  restartButton.addEventListener('mouseleave', () => {
-    restartButton.style.backgroundColor = '#ff4444';
-  });
-  restartButton.addEventListener('click', () => {
-    window.location.reload();
-  });
+  restartButton.addEventListener('mouseenter', () => (restartButton.style.backgroundColor = '#ff6666'));
+  restartButton.addEventListener('mouseleave', () => (restartButton.style.backgroundColor = '#ff4444'));
+  restartButton.addEventListener('click', () => window.location.reload());
 
   overlay.appendChild(gameOverText);
   overlay.appendChild(scoreText);
