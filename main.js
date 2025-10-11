@@ -6,7 +6,7 @@ import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
 let sceneWidth, sceneHeight;
 let camera, scene, renderer;
 let sun, road, heroSphere;
-let rollingSpeed = 0.5;
+let rollingSpeed = 0.6;
 let heroRollingSpeed;
 let heroRadius = 0.3;
 let heroBaseY = 0.5;

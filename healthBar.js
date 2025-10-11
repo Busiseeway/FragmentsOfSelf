@@ -65,29 +65,36 @@ function handleCollision(heroSphere, heroBaseY, scene) {
   const obstacles = getObstacles();
   let hitObstacle = null;
 
+
+  //had to change this for barricade explosion
   // Find the closest obstacle that we're colliding with
   for (let i = 0; i < obstacles.length; i++) {
     const obs = obstacles[i];
-    const dx = heroSphere.position.x - obs.position.x;
-    const dy = heroSphere.position.y - obs.position.y;
-    const dz = heroSphere.position.z - obs.position.z;
-    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    
-    if (distance < 1.5) { // Close enough to be the collision
-      hitObstacle = obs;
-      break;
+    const obsBox = new THREE.Box3().setFromObject(obs);
+    const heroBox = new THREE.Box3().setFromCenterAndSize(
+        heroSphere.position.clone(),
+        new THREE.Vector3(1, 1, 1) // adjust to hero size
+    );
+
+    if (heroBox.intersectsBox(obsBox)) {
+        hitObstacle = obs;
+        break;
     }
-  }
+}
+
 
   //PABIIIII THIS IS WHERE YOU START FOR OBSTACLE EXPLOSION
-  // Remove the obstacle that was hit
+  // explode obstacle that was hit
   if (hitObstacle && hitObstacle.parent) {
-    scene.remove(hitObstacle);
+    createExplosion(hitObstacle.position.clone(), scene);
+
     const index = obstacles.indexOf(hitObstacle);
     if (index > -1) {
-      obstacles.splice(index, 1);
+        obstacles.splice(index, 1);
     }
-  }
+    scene.remove(hitObstacle);
+}
+
 
   // Remove a heart
   removeHeart();
@@ -113,6 +120,46 @@ function handleCollision(heroSphere, heroBaseY, scene) {
     gameOver();
   }
 }
+
+function createExplosion(position, scene) {
+    const particles = [];
+    const particleCount = 20;
+    const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+    const material = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = new THREE.Mesh(geometry, material);
+        particle.position.copy(position);
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.5,
+            Math.random() * 0.5,
+            (Math.random() - 0.5) * 0.5
+        );
+        scene.add(particle);
+        particles.push(particle);
+    }
+
+    // Animate the particles for a short time
+    const duration = 500; // ms
+    const startTime = Date.now();
+
+    function animateExplosion() {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < duration) {
+            particles.forEach(p => {
+                p.position.add(p.velocity);
+                p.material.opacity = 1 - elapsed / duration;
+                p.material.transparent = true;
+            });
+            requestAnimationFrame(animateExplosion);
+        } else {
+            particles.forEach(p => scene.remove(p));
+        }
+    }
+
+    animateExplosion();
+}
+
 
 export function removeHeart() {
   if (hearts.length > 0) {

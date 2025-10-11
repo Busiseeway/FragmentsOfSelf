@@ -1,5 +1,6 @@
 let obstacles = [];
 
+//the falling
 export function spawnObstacle(leftLane, middleLane, rightLane, heroSphere, scene) {
     // A simple log (cylinder lying on the road)
     const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 8);
@@ -63,20 +64,27 @@ export function spawnBoulder(leftLane, rightLane, middleLane, heroBaseY, scene) 
 }
 
 export function checkCollisions2(heroSphere) {
+    // Define the hero’s collision box (rough cube around it)
+    const heroRadius = 0.5; // adjust to match your hero’s size
+    const heroBox = new THREE.Box3().setFromCenterAndSize(
+        heroSphere.position.clone(),
+        new THREE.Vector3(heroRadius * 2, heroRadius * 2, heroRadius * 2)
+    );
 
     for (let i = 0; i < obstacles.length; i++) {
         const obs = obstacles[i];
-        const dx = heroSphere.position.x - obs.position.x;
-        const dy = heroSphere.position.y - obs.position.y;
-        const dz = heroSphere.position.z - obs.position.z;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        
-        if (distance <= 1) { // Close enough to be the collision
+
+        // Create a bounding box for this obstacle
+        const obsBox = new THREE.Box3().setFromObject(obs);
+
+        // Check if boxes overlap
+        if (heroBox.intersectsBox(obsBox)) {
             return true;
         }
     }
     return false;
 }
+
 
 export function updateObstacles(scene, rollingSpeed, heroBaseY){
     // Move and animate obstacles
@@ -87,7 +95,7 @@ export function updateObstacles(scene, rollingSpeed, heroBaseY){
         if (obs.geometry.type === "CylinderGeometry") {
             // Falling effect until it hits the ground
             if (obs.position.y > heroBaseY) {
-                obs.position.y -= 0.1;
+                obs.position.y -= 0.2;   //speed of the falling log.
             }
             // Make log roll
             obs.rotation.x += 0.1;
@@ -121,3 +129,4 @@ export function clearObstacles(scene) {
   obstacles.forEach(obj => scene.remove(obj));
   obstacles = [];
 }
+
