@@ -8,6 +8,8 @@ import {
 } from './obstaclesL_1.js';
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
 import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 
 let sceneWidth, sceneHeight;
@@ -30,9 +32,12 @@ var hasCollided;
 let distance = 0;
 let roadSegments = [];
 let obstacles = [];
-
+let controls ;
 let treeGroups = [];
 let waterfalls = [];
+let raycaster;
+let isFirstPerson = false;
+
 
 //theto
 let jump_can=1;
@@ -58,13 +63,16 @@ function createScene() {
     scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
     
     camera = new THREE.PerspectiveCamera(60, sceneWidth / sceneHeight, 0.1, 1000);
+   
+    
+    //camera.position.y = 0;
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setClearColor(0x87CEEB, 1);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(sceneWidth, sceneHeight);
     document.body.appendChild(renderer.domElement);
-    
+  
     addRoad();
     addHero();
     addLight();
@@ -74,9 +82,14 @@ function createScene() {
     addSideWaterfalls(); // Add waterfalls along the sides
     addHearts();
     clock = new THREE.Clock();
+
+    //first person view
+    // controls = new PointerLockControls( camera, document.body );
+    // scene.add( controls.object );
+    // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
     
-    camera.position.set(0, 4, 8);
-    camera.lookAt(0, 0, 0);
+    // camera.position.set(0, 4, 8);
+    // camera.lookAt(0, 0, 0);
     
 	// score = document.createElement('div');
 	// score.style.position = 'absolute';
@@ -111,8 +124,44 @@ function handleKeyDown(keyEvent) {
         jump_can=0;
         velocity_y=16;
         }
-       
+     
+    //mukondi
+    else if(keyEvent.key === 'v' || keyEvent.key === 'V'){
+            toggleCameraView();
+        }
+    
     }
+function toggleCameraView(){
+    isFirstPerson = !isFirstPerson;
+
+    if (isFirstPerson) {
+        // Switch to First-Person
+        OrbitControls.enabled = false;
+        PointerLockControls.enabled = true;
+        
+        // Position camera relative to character
+        camera.position.copy(heroSphere.position);
+        camera.position.y += heroBaseY / 2; // Adjust for eye level
+        camera.position.x = heroSphere.position.x;
+        camera.rotation.copy(heroSphere.rotation); // Align camera with character's forward
+        
+    } else {
+        // Switch to Third-Person
+        PointerLockControls.enabled = false;
+        OrbitControls.enabled = true;
+        
+        // Reposition camera for third-person view
+        // (This might involve setting orbitControls target and camera position)
+        controls =  new OrbitControls(camera,renderer.domElement);
+//controls.target.set( 0, 0, 0 ); // Set the target to the origin
+        //OrbitControls.target.copy(heroSphere.position);
+       // camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+        camera.position.set(0, 4, 8);
+        camera.lookAt(0, 0, 0);
+    
+    }
+}
+
 
 function addHero() {
     const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
@@ -130,6 +179,7 @@ function addHero() {
     heroSphere.position.y = heroBaseY;
     heroSphere.position.z = 0;
     heroSphere.position.x = currentLane;
+    //heroSphere.add(camera);
 }
 
 function addRoad() {
@@ -648,9 +698,15 @@ function createWaterfall() {
 function update() {
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
+    //controls.update();
+    //first person
+    // raycaster.ray.origin.copy( controls.object.position );
+	// raycaster.ray.origin.y -= 10;
+
+	//const intersections = raycaster.intersectObjects( objects, false );
     
     // Update hero rolling animation
-    heroSphere.rotation.x += heroRollingSpeed * deltaTime;
+    //heroSphere.rotation.x += heroRollingSpeed * deltaTime;
 
      // Move trees to create infinite forest effect
     treeGroups.forEach(tree => {
@@ -752,7 +808,7 @@ function update() {
     });
     
     // Update camera to follow slightly
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
+    //camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
     
  emotions.forEach(emotion => {
         if (!emotion.userData.collected) {
