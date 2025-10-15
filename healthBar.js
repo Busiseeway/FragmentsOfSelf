@@ -39,6 +39,20 @@ export function addHearts(count = 5) {
   document.body.appendChild(heartsContainer);
 }
 
+// Utility: safely flash red for Mesh or GLTF model
+function flashHeroRed(heroSphere) {
+  // For Meshes and GLTFs alike
+  heroSphere.traverse ? heroSphere.traverse(applyFlash) : applyFlash(heroSphere);
+
+  function applyFlash(node) {
+    if (node.isMesh && node.material && node.material.color) {
+      const originalColor = node.material.color.clone();
+      node.material.color.setHex(0xff0000);
+      setTimeout(() => node.material.color.copy(originalColor), 200);
+    }
+  }
+}
+
 function takeDamage(heroSphere, heroBaseY, scene) {
   if (!canTakeDamage) return;
 
@@ -46,9 +60,7 @@ function takeDamage(heroSphere, heroBaseY, scene) {
   canTakeDamage = false;
 
   // Flash red briefly
-  const originalColor = heroSphere.material.color.getHex();
-  heroSphere.material.color.setHex(0xff0000);
-  setTimeout(() => heroSphere.material.color.setHex(originalColor), 200);
+  flashHeroRed(heroSphere);
 
   // Reset hero position (prevent floating)
   heroSphere.position.y = heroBaseY;
@@ -61,7 +73,7 @@ function takeDamage(heroSphere, heroBaseY, scene) {
   }
 }
 
-//For obstacles
+// For obstacles
 export function checkCollisions(heroSphere, heroBaseY, scene) {
   if (!canTakeDamage) return;
 
@@ -91,16 +103,14 @@ export function checkCollisions(heroSphere, heroBaseY, scene) {
   }
 }
 
-//hitting edges
+// Hitting edges
 export function takeLanePenalty(heroSphere, direction) {
   console.log("Boundary hit! Lost a heart.");
 
   removeHeart();
 
-  // Flash red
-  const originalColor = heroSphere.material.color.getHex();
-  heroSphere.material.color.setHex(0xff0000);
-  setTimeout(() => heroSphere.material.color.setHex(originalColor), 200);
+  // Flash red safely (works for GLTF too)
+  flashHeroRed(heroSphere);
 
   // Bounce effect (visual feedback)
   const originalX = heroSphere.position.x;

@@ -2,15 +2,15 @@ import * as THREE from 'three';
 
 import { createScene, scene, camera, renderer } from './scene.js';
 import { addLight } from './lights.js';
-import { addHero, heroSphere, heroBaseY } from './hero.js';
+import { addHero, heroSphere, heroBaseY, updateHero, playJumpAnimation } from './hero.js';
 import { addRoad, roadSegments, sideRocks } from './road.js';
 import { addBeach } from './beach.js'; 
 import { addSideTrees, treeGroups } from './trees.js'; 
 import { addSideWaterfalls, waterfalls } from './waterfalls.js'; 
 import { addEmotions, emotions, emotionTypes } from './emotions.js';
-import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty } from './healthBar.js';
-import { spawnLog, spawnBarricade,spawnHole, updateObstacles, clearObstacles, spawnRollingSphere} from './obstaclesL3.js';
-import { addSounds, sounds } from './sounds.js'; 
+import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty, resetHearts } from './healthBar.js';
+import { spawnLog, spawnBarricade, spawnHole, updateObstacles, clearObstacles, spawnRollingSphere } from './obstaclesL3.js';
+import { addSounds, sounds } from './sounds.js';
 
 let rollingSpeed = 0.6;
 let heroRollingSpeed;
@@ -53,6 +53,7 @@ function init() {
     addEmotions(scene);
     addHearts();
     addSounds(scene, camera);
+
     clock = new THREE.Clock();
 
     setupPauseControls();
@@ -63,10 +64,8 @@ function init() {
     update();
 }
 
-
 function setupPauseControls() {
     pauseButton = document.getElementById('pause-btn');
-
 
     if (pauseButton) {
         pauseButton.addEventListener('click', togglePause);
@@ -90,26 +89,21 @@ function togglePause() {
         pauseButton.textContent = 'Pause';
         clock.start();
         console.log('Game Resumed');
-
-        // Reset the clock to prevent time jumps
-        // clock.getDelta();
     }
 }
 
 function handleKeyDown(keyEvent) {
-    // if (isPaused) return;
-
-    // Left Arrow
+    // Left arrow
     if (keyEvent.keyCode === 37) {
         if (currentLane > leftLane) {
             currentLane -= 2;
         } else {
             // Already at leftmost lane
-            takeLanePenalty(heroSphere,-1);
+            takeLanePenalty(heroSphere, -1);
         }
     }
 
-    // Right Arrow
+    // Right arrow
     else if (keyEvent.keyCode === 39) {
         if (currentLane < rightLane) {
             currentLane += 2;
@@ -119,14 +113,16 @@ function handleKeyDown(keyEvent) {
         }
     }
 
-    // Up Arrow — Jump
+    // Up arrow — jump
     else if (keyEvent.keyCode === 38 && jump_can === 1) {
         jump_can = 0;
         velocity_y = 16;
         velocity_z = -1;
+
+        playJumpAnimation();
     }
 
-    // Spacebar — Pause
+    // Spacebar — pause
     else if (keyEvent.keyCode === 32) {
         keyEvent.preventDefault();
         togglePause();
@@ -145,165 +141,159 @@ function update() {
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
 
-    const elapsed = clock.getElapsedTime();
-    
-    // Spawn obstacles at regular intervals
-    if (elapsed - lastObstacleTime > obstacleInterval) {
-        const obstacleType = Math.floor(Math.random() * 6);
+    updateHero(deltaTime);
 
-        switch (obstacleType) {
-            case 0:
-                spawnLog(scene, heroSphere, leftLane, middleLane, rightLane);
-                break;
-            case 1:
-                spawnBarricade(scene, heroBaseY, leftLane, rightLane);
-                break;
-            case 2:
-                spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane);
-                break;
-            case 3: 
-                spawnRollingSphere(scene, leftLane, middleLane, rightLane); 
-                break;
+    if (heroSphere) {
+        const elapsed = clock.getElapsedTime();
+
+        // Spawn obstacles periodically
+        if (elapsed - lastObstacleTime > obstacleInterval) {
+            const obstacleType = Math.floor(Math.random() * 6);
+
+            switch (obstacleType) {
+                case 0:
+                    spawnLog(scene, heroSphere, leftLane, middleLane, rightLane);
+                    break;
+                case 1:
+                    spawnBarricade(scene, heroBaseY, leftLane, rightLane);
+                    break;
+                case 2:
+                    spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane);
+                    break;
+                case 3:
+                    spawnRollingSphere(scene, leftLane, middleLane, rightLane);
+                    break;
+            }
+
+            lastObstacleTime = elapsed;
         }
 
-        lastObstacleTime = elapsed;
-    }
+        // Update all obstacles
+        updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere);
 
-    // Update all obstacles (movement and animation)
-    updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere);
-    
-    // Update hero rolling animation
-    heroSphere.rotation.x += heroRollingSpeed * deltaTime;
-    
-    // Smooth lane changing
-    heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
-    
-    // Jump animation when up key is pressed
-    if (jump_can === 0) {
-        heroSphere.position.y += velocity_y * deltaTime;
-        heroSphere.position.z += velocity_z * deltaTime; // forward movement
-        velocity_y -= 45 * deltaTime; 
+        // Smooth lane changing
+        heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
 
-        if (heroSphere.position.y <= heroBaseY) {
-            heroSphere.position.y = heroBaseY;
-            velocity_y = 0;
-            jump_can = 1; 
+        // Jump logic
+        if (jump_can === 0) {
+            heroSphere.position.y += velocity_y * deltaTime;
+            heroSphere.position.z += velocity_z * deltaTime;
+            velocity_y -= 45 * deltaTime;
+
+            if (heroSphere.position.y <= heroBaseY) {
+                heroSphere.position.y = heroBaseY;
+                velocity_y = 0;
+                jump_can = 1;
+            }
+        } else {
+            heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
         }
-    } else {
-        // Add subtle bouncing
-        heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
-    }
-    
-    // Move road segments to create infinite road effect
-    roadSegments.forEach(segment => {
-        segment.position.z += rollingSpeed;
-        if (segment.position.z > 20) {
-            segment.position.z -= roadSegments.length * 20;
-        }
-    });
 
-    if (typeof sideRocks !== 'undefined') {
-        sideRocks.forEach(rock => {
-            rock.position.z += rollingSpeed;
-            if (rock.position.z > 20) {
-                rock.position.z -= roadSegments.length * 20; // wrap around with road
+        // Move road segments
+        roadSegments.forEach(segment => {
+            segment.position.z += rollingSpeed;
+            if (segment.position.z > 20) {
+                segment.position.z -= roadSegments.length * 20;
             }
         });
-    }
-    
-    // Move trees to create infinite forest effect
-    treeGroups.forEach(tree => {
-        tree.position.z += rollingSpeed;
-        if (tree.position.z > 20) {
-            tree.position.z -= 200;
-        }
-    });
 
-    // Move waterfalls to create infinite effect
-    waterfalls.forEach(waterfall => {
-        waterfall.position.z += rollingSpeed;
-        if (waterfall.position.z > 25) {
-            waterfall.position.z -= 300; // Reset further back
+        if (typeof sideRocks !== 'undefined') {
+            sideRocks.forEach(rock => {
+                rock.position.z += rollingSpeed;
+                if (rock.position.z > 20) {
+                    rock.position.z -= roadSegments.length * 20;
+                }
+            });
         }
-        
-        // Animate water flow and mist
-        const waterMesh = waterfall.children[1]; // Water plane
-        const mistParticles = waterfall.children[3]; // Mist particles
-        const pool = waterfall.children[2]; // Water pool
-        
-        if (waterMesh && waterMesh.geometry) {
-            // Animate water flowing down
-            const positions = waterMesh.geometry.attributes.position.array;
-            for (let i = 0; i < positions.length; i += 9) { // Every 3 vertices
-                positions[i] += Math.sin(distance * 10 + i) * 0.01; // Flowing motion
+
+        // Infinite trees
+        treeGroups.forEach(tree => {
+            tree.position.z += rollingSpeed;
+            if (tree.position.z > 20) {
+                tree.position.z -= 200;
             }
-            waterMesh.geometry.attributes.position.needsUpdate = true;
-        }
-        
-        // Animate mist particles
-        if (mistParticles) {
-            mistParticles.rotation.y += 0.01;
-            mistParticles.position.y = 2 + Math.sin(distance * 5) * 0.2;
-        }
-        
-        // Animate water pool
-        if (pool) {
-            pool.rotation.y += 0.02;
-            pool.material.opacity = 0.6 + Math.sin(distance * 8) * 0.2;
-        }
-    });
-    
-    // Update camera to follow slightly
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
-
-    // Update emotions (collectibles)
-    emotions.forEach(emotion => {
-        if (!emotion.userData.collected) {
-            emotion.position.z += rollingSpeed; // move towards player
-
-            // Collision detection (simple distance check)
-            const dx = heroSphere.position.x - emotion.position.x;
-            const dy = heroSphere.position.y - emotion.position.y;
-            const dz = heroSphere.position.z - emotion.position.z;
-            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-
-            if (dist < 1) { // collision radius
-                score += 10;
-                document.getElementById("score").textContent = "Score: " + score;
-                console.log("Collected " + emotion.userData.type + "! Score: " + score);
-
-                // Reset emotion immediately after collection
-                const lanes = [-2, 0, 2];
-                emotion.position.x = lanes[Math.floor(Math.random() * 3)];
-                emotion.position.z = -200 - Math.random() * 200;
-                emotion.userData.collected = false;
-
-                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
-                emotion.material.color.set(newType.color);
-                emotion.userData.type = newType.name;
-            }
-
-            // Reset if emotion goes behind hero
-            if (emotion.position.z > 10) {
-                const lanes = [-2, 0, 2];
-                emotion.position.x = lanes[Math.floor(Math.random() * 3)]; // pick random lane
-                emotion.position.z = -200 - Math.random() * 200; // random depth
-                emotion.userData.collected = false;
-
-                const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
-                emotion.material.color.set(newType.color);
-                emotion.userData.type = newType.name;
-
-                scene.add(emotion);
-            }
-        }
         });
-    
-    // Check health bar collisions
-    checkCollisions(heroSphere, heroBaseY, scene);
 
-    
-    
+        // Infinite waterfalls with animation
+        waterfalls.forEach(waterfall => {
+            waterfall.position.z += rollingSpeed;
+            if (waterfall.position.z > 25) {
+                waterfall.position.z -= 300;
+            }
+
+            const waterMesh = waterfall.children[1];
+            const mistParticles = waterfall.children[3];
+            const pool = waterfall.children[2];
+
+            if (waterMesh && waterMesh.geometry) {
+                const positions = waterMesh.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 9) {
+                    positions[i] += Math.sin(distance * 10 + i) * 0.01;
+                }
+                waterMesh.geometry.attributes.position.needsUpdate = true;
+            }
+
+            if (mistParticles) {
+                mistParticles.rotation.y += 0.01;
+                mistParticles.position.y = 2 + Math.sin(distance * 5) * 0.2;
+            }
+
+            if (pool) {
+                pool.rotation.y += 0.02;
+                pool.material.opacity = 0.6 + Math.sin(distance * 8) * 0.2;
+            }
+        });
+
+        // Camera follow
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
+
+        // Emotions (collectibles)
+        emotions.forEach(emotion => {
+            if (!emotion.userData.collected) {
+                emotion.position.z += rollingSpeed;
+
+                const dx = heroSphere.position.x - emotion.position.x;
+                const dy = heroSphere.position.y - emotion.position.y;
+                const dz = heroSphere.position.z - emotion.position.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                if (dist < 1) {
+                    score += 10;
+                    document.getElementById("score").textContent = "Score: " + score;
+                    console.log("Collected " + emotion.userData.type + "! Score: " + score);
+
+                    // Play sound if available
+                    if (sounds.collect) sounds.collect.play();
+
+                    const lanes = [-2, 0, 2];
+                    emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+                    emotion.position.z = -200 - Math.random() * 200;
+                    emotion.userData.collected = false;
+
+                    const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+                    emotion.material.color.set(newType.color);
+                    emotion.userData.type = newType.name;
+                }
+
+                if (emotion.position.z > 10) {
+                    const lanes = [-2, 0, 2];
+                    emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+                    emotion.position.z = -200 - Math.random() * 200;
+                    emotion.userData.collected = false;
+
+                    const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+                    emotion.material.color.set(newType.color);
+                    emotion.userData.type = newType.name;
+
+                    scene.add(emotion);
+                }
+            }
+        });
+
+        // Check health bar collisions
+        checkCollisions(heroSphere, heroBaseY, scene);
+    }
+
     render();
     requestAnimationFrame(update);
 }
@@ -321,21 +311,17 @@ function onWindowResize() {
 }
 
 function resetGame() {
-    // Clear all obstacles
     clearObstacles(scene);
-    
-    // Reset hero position
+    resetHearts();
+
     currentLane = middleLane;
     heroSphere.position.set(currentLane, heroBaseY, 0);
-    
-    // Reset game variables
+
     distance = 0;
     score = 0;
     document.getElementById("score").textContent = "Score: " + score;
-    
-    // Reset clock
+
     lastObstacleTime = clock.getElapsedTime();
 }
 
-// Export resetGame if needed elsewhere
 export { resetGame };
