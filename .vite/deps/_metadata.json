@@ -1,8 +1,25 @@
 {
-  "hash": "ae6ab572",
-  "configHash": "eba12cf3",
-  "lockfileHash": "e3b0c442",
-  "browserHash": "77e0dc00",
-  "optimized": {},
-  "chunks": {}
+  "hash": "b7513858",
+  "configHash": "e26f513a",
+  "lockfileHash": "0d8e7f08",
+  "browserHash": "f8931cef",
+  "optimized": {
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "41ea5610",
+      "needsInterop": false
+    },
+    "three/examples/jsm/loaders/GLTFLoader.js": {
+      "src": "../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
+      "file": "three_examples_jsm_loaders_GLTFLoader__js.js",
+      "fileHash": "9ecca5d0",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-SFOYLSYM": {
+      "file": "chunk-SFOYLSYM.js"
+    }
+  }
 }
