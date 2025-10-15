@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { createScene, scene, camera, renderer } from './scene.js';
 import { addLight } from './lights.js';
-import { addHero, heroSphere, heroBaseY } from './hero.js';
+import { addHero, heroSphere, heroBaseY, updateHero, playJumpAnimation } from './hero.js';
 import { addRoad, roadSegments, sideRocks } from './road.js';
 import { addBeach } from './beach.js'; 
 import { addSideTrees, treeGroups } from './trees.js'; 
@@ -30,6 +30,7 @@ let sceneHeight = window.innerHeight;
 // Jump variables
 let jump_can = 1;
 let velocity_y = 0;
+
 
 // Obstacle spawning
 let lastObstacleTime = 0;
@@ -102,7 +103,9 @@ function handleKeyDown(keyEvent) {
         }
     } else if (keyEvent.keyCode === 38 && jump_can == 1) { // up arrow - jump
         jump_can = 0;
-        velocity_y = 16;
+        velocity_y = 13;
+        
+        playJumpAnimation(); // Trigger jump animation
     }
 
     else if (keyEvent.keyCode === 32) { // spacebar
@@ -121,6 +124,7 @@ function update() {
 
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
+    updateHero(deltaTime);
     if(heroSphere){
 
     const elapsed = clock.getElapsedTime();
@@ -157,11 +161,13 @@ function update() {
     if (jump_can === 0) {
         heroSphere.position.y += velocity_y * deltaTime;
         velocity_y -= 45 * deltaTime; 
+        
 
         if (heroSphere.position.y <= heroBaseY) {
             heroSphere.position.y = heroBaseY;
             velocity_y = 0;
             jump_can = 1; 
+            
         }
     } else {
         // Add subtle bouncing
