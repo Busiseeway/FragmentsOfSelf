@@ -14,7 +14,7 @@ export function addHero(scene, currentLane) {
 
   // Load main idle/walk model
   loader.load(
-    'BetterOne.glb',
+    '/Monster/BetterOne.glb',
     (gltf) => {
       heroSphere = gltf.scene;
       heroSphere.scale.set(0.3, 0.3, 0.3);
@@ -34,7 +34,7 @@ export function addHero(scene, currentLane) {
 
       // Load jump animation
       loader.load(
-        'BetterOneJump.glb',
+        '/Monster/BetterOneJump.glb',
         (jumpGltf) => {
           if (jumpGltf.animations.length > 0) {
             animations.jump = mixer.clipAction(jumpGltf.animations[0]);
