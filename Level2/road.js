@@ -1,4 +1,9 @@
-function addRoad() {
+import * as THREE from "three";
+
+let roadSegments = [];
+let waterSegments = [];
+
+export function addRoad(scene) {
   const roadWidth = 8;
   const roadLength = 20;
   const segmentCount = 10;
@@ -24,11 +29,10 @@ function addRoad() {
     roadGeometry.computeVertexNormals();
 
     //Sand material
-    const roadMaterial = new THREE.MeshLambertMaterial({
+    const roadMaterial = new THREE.MeshStandardMaterial({
       color: 0xe6d7c3,
       transparent: false,
       roughness: 0.9,
-      vertexColors: false,
       metalness: 0.1,
       opacity: 0.85,
     });
@@ -112,10 +116,10 @@ function addRoad() {
     waterSegments.push(leftWaterSegment, rightWaterSegment);
   }
 
-  addBeachDetails();
+  addBeachDetails(scene);
 }
 
-function addBeachDetails() {
+function addBeachDetails(scene) {
   const detailCount = 50;
   const roadWidth = 8;
 
@@ -144,3 +148,5 @@ function addBeachDetails() {
     scene.add(detail);
   }
 }
+
+export { roadSegments, waterSegments };

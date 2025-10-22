@@ -1,7 +1,10 @@
-function addLight() {
+import * as THREE from "three";
+
+let sun, flash;
+
+export function addLight(scene) {
   const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
   scene.add(hemisphereLight);
-
   sun = new THREE.DirectionalLight(0xffffff, 0.02);
   sun.position.set(10, 10, 5);
   sun.castShadow = true;
@@ -18,8 +21,12 @@ function addLight() {
 }
 
 // Create a point light used for lightning flashes
-function createLightning() {
+export function createLightning(scene) {
   flash = new THREE.PointLight(0xbfe9ff, 0, 300);
   flash.position.set(0, 200, -50);
+  flash.intensity = 0; // Explicitly set intensity
   scene.add(flash);
+  return flash; // Return the flash object
 }
+
+export { sun, flash };

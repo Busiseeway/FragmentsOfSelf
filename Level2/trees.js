@@ -1,4 +1,8 @@
-function addSideTrees() {
+import * as THREE from "three";
+
+let treeGroups = [];
+
+export function addSideTrees(scene) {
   // Add variety of trees along the sides of the road
   for (let i = 0; i < 50; i++) {
     // Left side trees
@@ -120,3 +124,5 @@ function createTree(treeType = 0) {
   tree.scale.set(scale, scale, scale);
   return tree;
 }
+
+export { treeGroups };

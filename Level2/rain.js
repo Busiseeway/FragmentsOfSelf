@@ -1,6 +1,11 @@
-let rainMaterial, rainVelocities;
+import * as THREE from "three";
 
-function createRain() {
+let rainMaterial, rainGeo, rainVelocities;
+let rain;
+let rainCount = 30000;
+
+export function createRain(scene, count = 30000) {
+  rainCount = count;
   rainGeo = new THREE.BufferGeometry();
   const positions = new Float32Array(rainCount * 3);
   rainVelocities = new Float32Array(rainCount);
@@ -34,3 +39,5 @@ function createRain() {
   rain.frustumCulled = false;
   scene.add(rain);
 }
+
+export { rain, rainGeo, rainVelocities, rainCount };

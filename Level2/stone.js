@@ -1,4 +1,6 @@
-function createRealisticStone() {
+import * as THREE from "three";
+
+export function createRealisticStone() {
   const stoneTypes = ["round", "angular", "flat", "pebble"];
   const stoneType = stoneTypes[Math.floor(Math.random() * stoneTypes.length)];
 

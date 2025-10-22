@@ -9,10 +9,9 @@ let currentAction;
 let animations = {};
 let isJumping = false;
 
-export function addHero(scene, currentLane) {
+export function addHero(scene, currentLane, onLoaded) {
   const loader = new GLTFLoader();
 
-  // Load main idle/walk model
   loader.load(
     "/Monster/BetterOne.glb",
     (gltf) => {
@@ -39,6 +38,8 @@ export function addHero(scene, currentLane) {
           if (jumpGltf.animations.length > 0) {
             animations.jump = mixer.clipAction(jumpGltf.animations[0]);
           }
+          // Call the callback after both models are loaded
+          if (onLoaded) onLoaded();
         },
         undefined,
         (err) => console.error("Error loading jump model:", err)

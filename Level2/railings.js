@@ -1,4 +1,8 @@
-function addSideRailings() {
+import * as THREE from "three";
+
+let railings = [];
+
+export function addSideRailings(scene) {
   const numberOfStrips = 1000; // number of repeating segments
   const stripSpacing = 100; // length of each segment
 
@@ -24,3 +28,5 @@ function createRailingStrip() {
   });
   return new THREE.Mesh(geometry, material);
 }
+
+export { railings };

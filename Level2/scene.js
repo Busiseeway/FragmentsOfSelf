@@ -1,9 +1,9 @@
-function createScene() {
-  distance = 0;
-  clock = new THREE.Clock();
-  clock.start();
-  heroRollingSpeed = rollingSpeed * 5;
+import * as THREE from "three";
 
+let sceneWidth, sceneHeight;
+let camera, scene, renderer;
+
+export function createScene(container = document.body) {
   sceneWidth = window.innerWidth;
   sceneHeight = window.innerHeight;
   scene = new THREE.Scene();
@@ -17,40 +17,22 @@ function createScene() {
   renderer.setSize(sceneWidth, sceneHeight);
   document.body.appendChild(renderer.domElement);
 
-  const listener = new THREE.AudioListener();
-  camera.add(listener);
-
-  //theto (add rain sound)
-  const rainSound = new THREE.Audio(listener);
-  const audioLoader = new THREE.AudioLoader();
-  audioLoader.load(
-    "cold-snowfall-ambience-5-minutes-sound-effect-164512.mp3",
-    function (buffer) {
-      rainSound.setBuffer(buffer);
-      rainSound.setLoop(true);
-      rainSound.setVolume(0.4);
-      rainSound.play();
-    }
-  );
-
-  addRoad();
-  addHero();
-  addLight();
-  addSideTrees();
-  //addSideWaterfalls(); // Add waterfalls along the sides
-
-  //theto (add railings to scene)
-  addSideRailings();
-
-  //thet(add rain)
-  //createRain();
-  createLightning();
-  addEmotions(scene);
-  addHearts();
+  container.appendChild(renderer.domElement);
 
   camera.position.set(0, 4, 8);
   camera.lookAt(0, 0, 0);
 
   window.addEventListener("resize", onWindowResize, false);
-  document.addEventListener("keydown", handleKeyDown);
+
+  return { scene, camera, renderer };
 }
+
+function onWindowResize() {
+  sceneHeight = window.innerHeight;
+  sceneWidth = window.innerWidth;
+  renderer.setSize(sceneWidth, sceneHeight);
+  camera.aspect = sceneWidth / sceneHeight;
+  camera.updateProjectionMatrix();
+}
+
+export { scene, camera, renderer };
