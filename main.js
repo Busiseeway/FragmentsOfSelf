@@ -114,11 +114,13 @@ function togglePause() {
     isPaused = !isPaused;
 
     if (isPaused) {
-        pauseButton.textContent = 'Resume';
+        //pauseButton.textContent = 'Resume';
+        pauseButton.innerHTML = '<img src="icons8-play-94.png" width="50" height="50"/>' ;
         clock.stop();
         console.log('Game Paused');
     } else {
-        pauseButton.textContent = 'Pause';
+        //pauseButton.textContent = 'Pause';
+        pauseButton.innerHTML = '<img src="icons8-pause-64.png" width="50" height="50"/>' ;
         clock.start();
         console.log('Game Resumed');
     }
@@ -154,6 +156,7 @@ function handleKeyDown(keyEvent) {
         togglePause();
         return;
     }
+
     
     }
 function toggleCameraView(){

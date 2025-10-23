@@ -24,11 +24,13 @@ audioLoader.load( 'assets/sounds/Tokyo.mp3', function( buffer ) {
         if (isPlaying) {
             sound.pause();
             isPlaying = false;
-            toggleButton.textContent = 'Play Music';
+            //toggleButton.textContent = 'Play Music';
+            toggleButton.innerHTML = '<img src="icons8-no-audio-50.png" width="50" height="50"/>' ;
         } else {
             sound.play();
             isPlaying = true;
-            toggleButton.textContent = 'Pause Music';
+            // toggleButton.textContent = 'Pause Music';
+            toggleButton.innerHTML = '<img src="icons8-audio-50.png" width="50" height="50"/>' ;
         }
     });
 console.log("Sound on");
