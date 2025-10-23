@@ -8,7 +8,7 @@ export function addRollingLogs(scene) {
 
   //add Texture
   const texture = new THREE.TextureLoader().load(
-    "textures.top-view-tree-bark.jpg"
+    "assets/textures/top-view-tree-bark.jpg"
   );
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;

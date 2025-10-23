@@ -19,6 +19,7 @@ import { createScene, scene, camera, renderer } from "./scene.js";
 import { addLight } from "./lights.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {sounds,addSounds} from './sounds.js';
 
 export function startLevel1() {
   let road, heroSphere;
@@ -48,6 +49,7 @@ export function startLevel1() {
   //theto
   let jump_can = 1;
   let velocity_y = 0;
+  let velocity_z = 0;
   let delta = 0;
 
   init();
@@ -63,7 +65,7 @@ export function startLevel1() {
     addSideWaterfalls(scene); // Add waterfalls along the sides
     addHearts();
     clock = new THREE.Clock();
-
+    addSounds(scene, camera);
     addHero(scene);
 
     update();
@@ -92,11 +94,11 @@ export function startLevel1() {
     isPaused = !isPaused;
 
     if (isPaused) {
-      pauseButton.textContent = "Resume";
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
       clock.stop();
       console.log("Game Paused");
     } else {
-      pauseButton.textContent = "Pause";
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;;
       clock.start();
       console.log("Game Resumed");
     }
@@ -118,7 +120,7 @@ export function startLevel1() {
     else if (keyEvent.keyCode === 38 && jump_can == 1) {
       //up
       jump_can = 0;
-      heroSphere.position.z -= 1;
+      velocity_z =- 1;
       velocity_y = 16;
     }
 
@@ -240,7 +242,7 @@ export function startLevel1() {
     // })
     //pabii
     // Spawn random obstacle (low probability each frame)
-    if (Math.random() < 0.01) {
+    if (Math.random() < 0.015) {
       // adjust 0.01 to control frequency
       const choice = Math.random();
       if (choice < 0.4) {
@@ -314,7 +316,7 @@ export function startLevel1() {
 
     emotions.forEach((emotion) => {
       if (!emotion.userData.collected) {
-        emotion.position.z += rollingSpeed * 0.8; // move towards player
+        emotion.position.z += rollingSpeed ; // move towards player
 
         // Collision detection (simple distance check)
         const dx = heroSphere.position.x - emotion.position.x;

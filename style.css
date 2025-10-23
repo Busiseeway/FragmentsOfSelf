@@ -43,3 +43,20 @@ canvas {
 #instructions div:not(:first-child) {
     margin-top: 4px;
 }
+#audio-btn{
+     background: #463e7d;
+    color: white;
+    border-radius: 20%;
+    border:1px solid rgb(97, 97, 158);
+    position: relative;
+    top:60px;
+}
+
+#pause-btn{
+    background: #463e7d;
+    color: white;
+    border-radius: 20%;
+    border:1px solid rgb(97, 97, 158);
+    position: relative;
+    top:60px; 
+}
