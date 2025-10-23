@@ -15,7 +15,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 let sceneWidth, sceneHeight;
 let camera, scene, renderer;
 let sun, road, heroSphere;
-let rollingSpeed = 0.25;
+let rollingSpeed = 0.2;
 let heroRollingSpeed;
 let heroRadius = 0.3;
 let heroBaseY = 0.5;
@@ -63,7 +63,8 @@ function createScene() {
     scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
     
     camera = new THREE.PerspectiveCamera(60, sceneWidth / sceneHeight, 0.1, 1000);
-   
+    camera.position.set(0, 4, 8);
+    camera.lookAt(0, 0, 0);
     
     //camera.position.y = 0;
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -83,24 +84,7 @@ function createScene() {
     addHearts();
     clock = new THREE.Clock();
 
-    //first person view
-    // controls = new PointerLockControls( camera, document.body );
-    // scene.add( controls.object );
-    // raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
     
-    // camera.position.set(0, 4, 8);
-    // camera.lookAt(0, 0, 0);
-    
-	// score = document.createElement('div');
-	// score.style.position = 'absolute';
-	// //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-	// score.style.width = 200;
-	// score.style.height = 200;
-	// score.style.backgroundColor = "yellow";
-	// score.innerHTML = "0";
-	// score.style.top = 50 + 'px';
-	// score.style.left = 10 + 'px';
-	// document.body.appendChild(score);
 
 
     window.addEventListener('resize', onWindowResize, false);
@@ -117,11 +101,13 @@ function handleKeyDown(keyEvent) {
     else if (keyEvent.keyCode === 39) { // right
         if (currentLane < rightLane) {
             currentLane += 2;
+            
         }
     }
     //theto
     else if (keyEvent.keyCode === 38 && jump_can==1) { //up
         jump_can=0;
+        heroSphere.position.z -=1;
         velocity_y=16;
         }
      
@@ -138,10 +124,9 @@ function toggleCameraView(){
         // Switch to First-Person
         OrbitControls.enabled = false;
         PointerLockControls.enabled = true;
-        
         // Position camera relative to character
         camera.position.copy(heroSphere.position);
-        camera.position.y += heroBaseY / 2; // Adjust for eye level
+        camera.position.y += heroBaseY /2; // Adjust for eye level
         camera.position.x = heroSphere.position.x;
         camera.rotation.copy(heroSphere.rotation); // Align camera with character's forward
         
@@ -159,6 +144,21 @@ function toggleCameraView(){
         camera.position.set(0, 4, 8);
         camera.lookAt(0, 0, 0);
     
+    }
+}
+function updateCamera(){
+    if(isFirstPerson){
+        OrbitControls.enabled = false;
+        PointerLockControls.enabled = true;
+        // Position camera relative to character
+        camera.position.copy(heroSphere.position);
+        camera.position.y += heroBaseY /2; // Adjust for eye level
+        camera.position.x = heroSphere.position.x;
+        camera.rotation.copy(heroSphere.rotation);
+    }
+    else{
+        const deltaTime = clock.getDelta();
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
     }
 }
 
@@ -808,6 +808,7 @@ function update() {
     });
     
     // Update camera to follow slightly
+    updateCamera();
     //camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
     
  emotions.forEach(emotion => {
