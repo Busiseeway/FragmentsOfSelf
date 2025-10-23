@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import { createMenu } from "./menu2.js";
+
+
 
 import { addEmotions, updateEmotions } from "./emotions2.js";
 import {
@@ -13,6 +16,7 @@ import { addRoad, roadSegments, waterSegments } from "./road.js";
 import { addSideTrees, treeGroups } from "./trees.js";
 import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
 import { addSounds, sounds } from "./sounds.js";
+import  { createRain, rain, rainGeo, rainVelocities, rainCount } from "./rain.js";
 import { createScene, scene, camera, renderer } from "./scene.js";
 import {
   addHero,
@@ -23,13 +27,7 @@ import {
 } from "../hero.js";
 import { addLight, createLightning, flash } from "./lighting.js";
 import { addSideRailings, railings } from "./railings.js";
-import {
-  createRain,
-  rain,
-  rainGeo,
-  rainVelocities,
-  rainCount,
-} from "./rain.js";
+
 
 export function startLevel2() {
   let road;
@@ -68,6 +66,8 @@ export function startLevel2() {
 
     //theto (add railings to scene)
     addSideRailings(scene);
+    // make sure this import is at the top
+    createRain(scene,5000);
 
     //thet(add rain)
     //createRain();
@@ -223,7 +223,7 @@ export function startLevel2() {
 
       for (let i = 0; i < rainCount; i++) {
         const idx = i * 3 + 1; // y coordinate
-        positions[idx] -= rainVelocities[i] * 500 * deltaTime; // smooth fall speed
+        positions[idx] -= rainVelocities[i] * 700 * deltaTime; // smooth fall speed
 
         // reset drop when below ground
         if (positions[idx] < -60) {

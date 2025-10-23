@@ -10,7 +10,7 @@ export function addSounds(scene, camera) {
   const rainSound = new THREE.Audio(listener);
   const audioLoader = new THREE.AudioLoader();
   audioLoader.load(
-    "assests/sounds/cold-snowfall-ambience.mp3",
+    "assets/sounds/cold-snowfall-ambience.mp3",
     function (buffer) {
       rainSound.setBuffer(buffer);
       rainSound.setLoop(true);
