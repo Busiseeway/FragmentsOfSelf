@@ -43,3 +43,10 @@ canvas {
 #instructions div:not(:first-child) {
     margin-top: 4px;
 }
+
+.audio-btn{
+    border:2px solid blue;
+    
+    position: relative;
+    top: 315px;
+}

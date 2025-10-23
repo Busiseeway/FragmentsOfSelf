@@ -10,6 +10,8 @@ import { addEmotions, emotions, emotionTypes } from './emotions.js';
 import { addHearts, checkCollisions, resetHearts } from './healthBar.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {sounds,addSounds} from './sounds.js';
+let context;
 
 
 let sceneWidth, sceneHeight;
@@ -40,8 +42,6 @@ let pauseButton;
 let resumeButton;
 let raycaster;
 let isFirstPerson = false;
-
-
 //theto
 let jump_can=1;
 let velocity_y=0;
@@ -68,6 +68,7 @@ function createScene() {
     camera = new THREE.PerspectiveCamera(60, sceneWidth / sceneHeight, 0.1, 1000);
     camera.position.set(0, 4, 8);
     camera.lookAt(0, 0, 0);
+
     
     //camera.position.y = 0;
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -85,13 +86,15 @@ function createScene() {
     addEmotions(scene);
     addSideWaterfalls(); // Add waterfalls along the sides
     addHearts();
-    clock = new THREE.Clock();
+   // clock = new THREE.Clock();
+   addSounds(scene, camera);
 
     
 setupPauseControls();
 
     window.addEventListener('resize', onWindowResize, false);
     document.addEventListener('keydown', handleKeyDown);
+  
 }
 function setupPauseControls() {
     pauseButton = document.getElementById('pause-btn');
@@ -725,9 +728,12 @@ function createWaterfall() {
 
     return waterfall;
 }
-
-
-
+function nextLevel(score){
+    if(score>=1000){
+    alert("Level 1 Complete");
+    resetGame();
+    }
+}
 
 
 
@@ -746,7 +752,7 @@ function update() {
             tree.position.z -= 200;
         }
     });
-
+    nextLevel(score);
      //theto (jump animation when up key is pressed)
     if (jump_can === 0) {
     heroSphere.position.y += velocity_y * deltaTime;
@@ -770,7 +776,7 @@ function update() {
     // })
       //pabii
     // Spawn random obstacle (low probability each frame)
-    if (Math.random() < 0.01) { // adjust 0.01 to control frequency
+    if (Math.random() < 0.015) { // adjust 0.01 to control frequency
         const choice = Math.random();
         if (choice < 0.4) {
             addRollingLogs(scene);   // log
