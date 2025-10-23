@@ -1,7 +1,4 @@
 import * as THREE from "three";
-import { createMenu } from "./menu2.js";
-
-
 
 import { addEmotions, updateEmotions } from "./emotions2.js";
 import {
@@ -15,8 +12,7 @@ import { addHearts, checkCollisions, resetHearts } from "./healthBar.js";
 import { addRoad, roadSegments, waterSegments } from "./road.js";
 import { addSideTrees, treeGroups } from "./trees.js";
 import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
-import { addSounds, sounds } from "./sounds.js";
-import  { createRain, rain, rainGeo, rainVelocities, rainCount } from "./rain.js";
+//import { addSounds, sounds } from "./sounds.js";
 import { createScene, scene, camera, renderer } from "./scene.js";
 import {
   addHero,
@@ -27,14 +23,20 @@ import {
 } from "../hero.js";
 import { addLight, createLightning, flash } from "./lighting.js";
 import { addSideRailings, railings } from "./railings.js";
-
+import {
+  createRain,
+  rain,
+  rainGeo,
+  rainVelocities,
+  rainCount,
+} from "./rain.js";
 
 export function startLevel2() {
   let road;
   let rollingSpeed = 0.6;
   let heroRollingSpeed;
   let heroRadius = 0.3;
-  let heroBaseY = 0.5;
+  //let heroBaseY = 0.5;
   let bounceValue = 0.02;
   let gravity = 0.002;
   let leftLane = -2;
@@ -51,6 +53,17 @@ export function startLevel2() {
   let delta = 0;
   let cloudParticles = [];
   let rainParticles = [];
+  let isPaused = false;
+  let resumeButton;
+
+
+  function onWindowResize() {
+    const sceneHeight = window.innerHeight;
+    const sceneWidth = window.innerWidth;
+    renderer.setSize(sceneWidth, sceneHeight);
+    camera.aspect = sceneWidth / sceneHeight;
+    camera.updateProjectionMatrix();
+  }
 
   init();
 
@@ -66,15 +79,13 @@ export function startLevel2() {
 
     //theto (add railings to scene)
     addSideRailings(scene);
-    // make sure this import is at the top
-    createRain(scene,5000);
 
     //thet(add rain)
     //createRain();
     createLightning(scene);
     addEmotions(scene);
     addHearts();
-    addSounds(scene, camera);
+    //addSounds(scene, camera);
 
     // ✅ Start hero loading and update loop only after loaded
     addHero(scene, 0, () => {
@@ -83,13 +94,102 @@ export function startLevel2() {
       update(); // start game loop only after hero is ready
     });
 
+     // create hamburger in-game menu
+    createInGameMenu();
+
     clock = new THREE.Clock();
 
     window.addEventListener("resize", onWindowResize, false);
     document.addEventListener("keydown", handleKeyDown);
 
+    function createInGameMenu() {
+    const menuBtn = document.createElement('div');
+    menuBtn.id = 'hamburger-menu';
+    menuBtn.innerHTML = '&#9776;';
+    menuBtn.style.cssText = `
+      position: fixed;
+      top: 30px;
+      left: 15px;
+      font-size: 40px;
+      color: white;
+      cursor: pointer;
+      z-index: 1500;
+    `;
+    document.body.appendChild(menuBtn);
+
+    const menuOverlay = document.createElement('div');
+    menuOverlay.id = 'in-game-menu';
+    menuOverlay.style.cssText = `
+      position: fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    `;
+    document.body.appendChild(menuOverlay);
+
+    resumeButton = document.createElement('button');
+    resumeButton.textContent = 'RESUME';
+    styleMenuButton(resumeButton);
+    resumeButton.addEventListener('click', () => {
+      menuOverlay.style.display = 'none';
+      if (isPaused) togglePause();
+    });
+
+    const controlsBtn = document.createElement('button');
+    controlsBtn.textContent = 'CONTROLS';
+    styleMenuButton(controlsBtn);
+    controlsBtn.addEventListener('click', () => {
+      alert(`Controls:\n← → Move\n↑ Jump\nV Change Camera\nSpace - Pause`);
+    });
+
+    menuOverlay.appendChild(resumeButton);
+    menuOverlay.appendChild(controlsBtn);
+
+    menuBtn.addEventListener('click', () => {
+      const isShowing = menuOverlay.style.display !== 'flex';
+      menuOverlay.style.display = isShowing ? 'flex' : 'none';
+      if (isShowing && !isPaused) togglePause(); // pause game when menu opens
+    });
+
+    function styleMenuButton(btn) {
+      btn.style.cssText = `
+        background: linear-gradient(135deg, #FFD700 0%, #ffcc00 100%);
+        color: #333;
+        border: none;
+        padding: 15px 50px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 15px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      `;
+      btn.addEventListener('mouseover', () => {
+        btn.style.transform = 'scale(1.1)';
+        btn.style.boxShadow = '0 0 25px rgba(255,215,0,0.7)';
+      });
+      btn.addEventListener('mouseout', () => {
+        btn.style.transform = 'scale(1)';
+        btn.style.boxShadow = 'none';
+      });
+    }
+  }
+
     update();
   }
+
+  function togglePause() {
+    isPaused = !isPaused;
+    console.log(isPaused ? "Game Paused" : "Game Resumed");
+  }
+  
 
   function handleKeyDown(keyEvent) {
     if (keyEvent.keyCode === 37) {
@@ -113,9 +213,9 @@ export function startLevel2() {
 
   function update() {
     if (!heroSphere) return requestAnimationFrame(update); // safety check
-    const deltaTime = clock.getDelta();
-    distance += rollingSpeed;
-
+    if (!isPaused) {
+      const deltaTime = clock.getDelta();
+      distance += rollingSpeed;
     // Update hero rolling animation
     heroSphere.rotation.x += heroRollingSpeed * deltaTime;
 
@@ -223,7 +323,7 @@ export function startLevel2() {
 
       for (let i = 0; i < rainCount; i++) {
         const idx = i * 3 + 1; // y coordinate
-        positions[idx] -= rainVelocities[i] * 700 * deltaTime; // smooth fall speed
+        positions[idx] -= rainVelocities[i] * 500 * deltaTime; // smooth fall speed
 
         // reset drop when below ground
         if (positions[idx] < -60) {
@@ -287,13 +387,7 @@ export function startLevel2() {
     renderer.render(scene, camera);
   }
 
-  function onWindowResize() {
-    const sceneHeight = window.innerHeight;
-    const sceneWidth = window.innerWidth;
-    renderer.setSize(sceneWidth, sceneHeight);
-    camera.aspect = sceneWidth / sceneHeight;
-    camera.updateProjectionMatrix();
-  }
+  
 
   //pabi
   function resetGame() {
@@ -305,5 +399,5 @@ export function startLevel2() {
     distance = 0;
   }
 }
-
+}
 //export { resetGame };

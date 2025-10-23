@@ -11,7 +11,7 @@ import { addSideWaterfalls, waterfalls } from '../waterfalls.js';
 import { addEmotions, emotions, emotionTypes } from '../emotions.js';
 import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade, spawnHole, updateObstacles, clearObstacles, spawnRollingSphere } from './obstaclesL3.js';
-import { addSounds, sounds } from '../sounds.js';
+import { addSounds, sounds } from './sounds3.js';
 
 let resetGame;
 
@@ -32,6 +32,7 @@ let pauseButton;
 let resumeButton;
 let sceneWidth = window.innerWidth;
 let sceneHeight = window.innerHeight;
+
 //theto menu
 let gameStarted = false;
 
@@ -79,6 +80,8 @@ function startGame() {
     gameStarted = true;
     clock.start();
     lastObstacleTime = clock.getElapsedTime();
+    const spookyDance = sounds.find(s => s.name === 'spookyDance');
+    if (spookyDance) spookyDance.audio.play();
     update();
 }
 
