@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 //mukondi
 import {
   addRollingLogs,
@@ -54,7 +56,6 @@ export function startLevel1() {
     createScene();
 
     addRoad(scene);
-    addHero(scene);
     addLight(scene);
     addSideTrees(scene);
     //addObstacles();
@@ -63,12 +64,125 @@ export function startLevel1() {
     addHearts();
     clock = new THREE.Clock();
 
+    addHero(scene);
+
+    update();
+
     setupPauseControls();
 
     window.addEventListener("resize", onWindowResize, false);
     document.addEventListener("keydown", handleKeyDown);
+  }
 
-    update();
+  function setupPauseControls() {
+    pauseButton = document.getElementById("pause-btn");
+
+    if (pauseButton) {
+      pauseButton.addEventListener("click", togglePause);
+    } else {
+      console.error("Pause button not found!");
+    }
+
+    if (resumeButton) {
+      resumeButton.addEventListener("click", togglePause);
+    }
+  }
+
+  function togglePause() {
+    isPaused = !isPaused;
+
+    if (isPaused) {
+      pauseButton.textContent = "Resume";
+      clock.stop();
+      console.log("Game Paused");
+    } else {
+      pauseButton.textContent = "Pause";
+      clock.start();
+      console.log("Game Resumed");
+    }
+  }
+
+  function handleKeyDown(keyEvent) {
+    if (keyEvent.keyCode === 37) {
+      // left
+      if (currentLane > leftLane) {
+        currentLane -= 2;
+      }
+    } else if (keyEvent.keyCode === 39) {
+      // right
+      if (currentLane < rightLane) {
+        currentLane += 2;
+      }
+    }
+    //theto
+    else if (keyEvent.keyCode === 38 && jump_can == 1) {
+      //up
+      jump_can = 0;
+      heroSphere.position.z -= 1;
+      velocity_y = 16;
+    }
+
+    //mukondi
+    else if (keyEvent.key === "v" || keyEvent.key === "V") {
+      toggleCameraView();
+    }
+    // Spacebar — pause
+    else if (keyEvent.keyCode === 32) {
+      keyEvent.preventDefault();
+      togglePause();
+      return;
+    }
+  }
+  function toggleCameraView() {
+    isFirstPerson = !isFirstPerson;
+
+    if (isFirstPerson) {
+      // Switch to First-Person
+      OrbitControls.enabled = false;
+      PointerLockControls.enabled = true;
+      // Position camera relative to character
+      camera.position.copy(heroSphere.position);
+      camera.position.y += heroBaseY / 2; // Adjust for eye level
+      camera.position.x = heroSphere.position.x;
+      camera.rotation.copy(heroSphere.rotation); // Align camera with character's forward
+    } else {
+      // Switch to Third-Person
+      PointerLockControls.enabled = false;
+      OrbitControls.enabled = true;
+
+      // Reposition camera for third-person view
+      // (This might involve setting orbitControls target and camera position)
+      controls = new OrbitControls(camera, renderer.domElement);
+      //controls.target.set( 0, 0, 0 ); // Set the target to the origin
+      //OrbitControls.target.copy(heroSphere.position);
+      // camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(0, 4, 8);
+      camera.lookAt(0, 0, 0);
+    }
+  }
+  function updateCamera() {
+    if (isFirstPerson) {
+      OrbitControls.enabled = false;
+      PointerLockControls.enabled = true;
+      // Position camera relative to character
+      camera.position.copy(heroSphere.position);
+      camera.position.y += heroBaseY / 2; // Adjust for eye level
+      camera.position.x = heroSphere.position.x;
+      camera.rotation.copy(heroSphere.rotation);
+    } else {
+      const deltaTime = clock.getDelta();
+      camera.position.z = THREE.MathUtils.lerp(
+        camera.position.z,
+        heroSphere.position.z + 8,
+        2 * deltaTime
+      );
+    }
+  }
+
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   function addHero() {
@@ -210,7 +324,7 @@ export function startLevel1() {
 
         if (dist < 1) {
           // collision radius
-          score += 10;
+          score += emotion.userData.score;
           document.getElementById("score").textContent = "Score: " + score;
           console.log(
             "Collected " + emotion.userData.type + "! Score: " + score

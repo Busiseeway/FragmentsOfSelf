@@ -37,7 +37,7 @@ function createWaterfall() {
 
   // cliff backdrop
   const cliffGeometry = new THREE.BoxGeometry(6, 12, 2);
-  const cliffMaterial = new THREE.MeshLambertMaterial({
+  const cliffMaterial = new THREE.MeshStandardMaterial({
     color: 0x555555,
     roughness: 0.9,
   });
