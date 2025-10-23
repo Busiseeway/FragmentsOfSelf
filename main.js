@@ -8,4 +8,10 @@ if (path === "/level1") {
     .catch((err) => console.error("Failed to load level:", err));
 } else {
   console.error("Level not found");
+if (path === '/level3') {
+    import('./Level3/main3.js').then(level3 => {
+        level3.startLevel3();
+    }).catch(err => console.error("Failed to load level:", err));
+} else {
+    console.error("Level not found");
 }
