@@ -35,6 +35,9 @@ let obstacles = [];
 let controls ;
 let treeGroups = [];
 let waterfalls = [];
+let isPaused = false;
+let pauseButton;
+let resumeButton;
 let raycaster;
 let isFirstPerson = false;
 
@@ -55,7 +58,7 @@ function createScene() {
     distance = 0;
     clock = new THREE.Clock();
     clock.start();
-    heroRollingSpeed = rollingSpeed * 5;
+    heroRollingSpeed = rollingSpeed * 10;
     
     sceneWidth = window.innerWidth;
     sceneHeight = window.innerHeight;
@@ -85,10 +88,37 @@ function createScene() {
     clock = new THREE.Clock();
 
     
-
+setupPauseControls();
 
     window.addEventListener('resize', onWindowResize, false);
     document.addEventListener('keydown', handleKeyDown);
+}
+function setupPauseControls() {
+    pauseButton = document.getElementById('pause-btn');
+
+    if (pauseButton) {
+        pauseButton.addEventListener('click', togglePause);
+    } else {
+        console.error('Pause button not found!');
+    }
+
+    if (resumeButton) {
+        resumeButton.addEventListener('click', togglePause);
+    }
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+
+    if (isPaused) {
+        pauseButton.textContent = 'Resume';
+        clock.stop();
+        console.log('Game Paused');
+    } else {
+        pauseButton.textContent = 'Pause';
+        clock.start();
+        console.log('Game Resumed');
+    }
 }
 
 function handleKeyDown(keyEvent) {
@@ -115,6 +145,12 @@ function handleKeyDown(keyEvent) {
     else if(keyEvent.key === 'v' || keyEvent.key === 'V'){
             toggleCameraView();
         }
+         // Spacebar — pause
+    else if (keyEvent.keyCode === 32) {
+        keyEvent.preventDefault();
+        togglePause();
+        return;
+    }
     
     }
 function toggleCameraView(){
@@ -696,19 +732,14 @@ function createWaterfall() {
 
 
 function update() {
+    if (isPaused) {
+        render();
+        requestAnimationFrame(update);
+        return;
+    }
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
-    //controls.update();
-    //first person
-    // raycaster.ray.origin.copy( controls.object.position );
-	// raycaster.ray.origin.y -= 10;
-
-	//const intersections = raycaster.intersectObjects( objects, false );
     
-    // Update hero rolling animation
-    //heroSphere.rotation.x += heroRollingSpeed * deltaTime;
-
-     // Move trees to create infinite forest effect
     treeGroups.forEach(tree => {
         tree.position.z += rollingSpeed;
         if (tree.position.z > 20) {
