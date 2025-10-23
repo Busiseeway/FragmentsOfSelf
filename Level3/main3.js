@@ -36,6 +36,7 @@ let sceneHeight = window.innerHeight;
 let jump_can = 1;
 let velocity_y = 0;
 let velocity_z = 0;
+let slide_can =1;
 
 // Obstacle spawning
 let lastObstacleTime = 0;
@@ -118,12 +119,18 @@ function handleKeyDown(keyEvent) {
     }
 
     // Up arrow — jump
-    else if (keyEvent.keyCode === 38 && jump_can === 1) {
+    else if (keyEvent.keyCode === 38 && jump_can == 1) { // up arrow - jump
         jump_can = 0;
-        velocity_y = 16;
-        velocity_z = -1;
-
-        playJumpAnimation();
+        velocity_y = 15;
+        
+        playJumpAnimation('jump'); // Trigger jump animation
+    }
+    //down arrow - slide
+     else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
+        slide_can = 0;
+        velocity_y = 10;
+        
+        playJumpAnimation('slide'); // Trigger jump animation
     }
 
     // Spacebar — pause
