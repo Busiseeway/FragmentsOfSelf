@@ -1,34 +1,52 @@
 import * as THREE from 'three';
 
 let obstacles = [];
+let smokeParticles = [];
 
-export function spawnRollingSphere(scene, leftLane, middleLane, rightLane) {
-    const lanes = [leftLane, middleLane, rightLane];
-    const radius = 0.5;
+// Difficulty & spawn control
+let difficultyLevel = 2;
+let timeSinceLastSpawn = 0;
+let spawnInterval = 1500; // milliseconds between spawns
+let lastSpawnTime = 0;
 
-    lanes.forEach(lane => {
-        const geometry = new THREE.DodecahedronGeometry(radius, 2);
-        const material = new THREE.MeshStandardMaterial({
-            color: 0xff0000,
-            flatShading: true,
-            metalness: 0.3,
-            roughness: 0.4
-        });
-
-        const rollingSphere = new THREE.Mesh(geometry, material);
-        rollingSphere.castShadow = true;
-        rollingSphere.receiveShadow = true;
-        rollingSphere.userData.type = 'rollingSphere';
-        rollingSphere.userData.radius = radius;
-
-        rollingSphere.position.set(lane, radius, -75); // start far ahead
-        scene.add(rollingSphere);
-        obstacles.push(rollingSphere);
-    });
+// === Utility: Load rock textures (optional) ===
+const textureLoader = new THREE.TextureLoader();
+function loadTexture(path) {
+  return textureLoader.load(
+    path,
+    undefined,
+    undefined,
+    (err) => console.error(`❌ Failed to load texture: ${path}`, err)
+  );
 }
 
+// === ROLLING SPHERE ===
+export function spawnRollingSphere(scene, leftLane, middleLane, rightLane) {
+  const lanes = [leftLane, middleLane, rightLane];
+  const radius = 0.5;
 
+  lanes.forEach(lane => {
+    const geometry = new THREE.DodecahedronGeometry(radius, 2);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xff0000,
+      flatShading: true,
+      metalness: 0.3,
+      roughness: 0.4
+    });
 
+    const rollingSphere = new THREE.Mesh(geometry, material);
+    rollingSphere.castShadow = true;
+    rollingSphere.receiveShadow = true;
+    rollingSphere.userData.type = 'rollingSphere';
+    rollingSphere.userData.radius = radius;
+
+    rollingSphere.position.set(lane, radius, -75); // start far ahead
+    scene.add(rollingSphere);
+    obstacles.push(rollingSphere);
+  });
+}
+
+// === LOG ===
 export function spawnLog(scene, heroSphere, leftLane, middleLane, rightLane) {
   const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 8);
   const logMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
@@ -37,13 +55,10 @@ export function spawnLog(scene, heroSphere, leftLane, middleLane, rightLane) {
   log.rotation.z = Math.PI / 2; // lay it flat
   log.userData.type = 'log';
 
-  // Pick a random lane
   const lanes = [leftLane, middleLane, rightLane];
   const lane = lanes[Math.floor(Math.random() * lanes.length)];
 
-  // Position above road so it can "fall"
   log.position.set(lane, 6, heroSphere.position.z - 30);
-
   log.castShadow = true;
   log.receiveShadow = true;
 
@@ -51,6 +66,7 @@ export function spawnLog(scene, heroSphere, leftLane, middleLane, rightLane) {
   obstacles.push(log);
 }
 
+// === BARRICADE ===
 export function spawnBarricade(scene, heroBaseY, leftLane, rightLane) {
   const barricadeGroup = new THREE.Group();
 
@@ -68,7 +84,7 @@ export function spawnBarricade(scene, heroBaseY, leftLane, rightLane) {
   base.receiveShadow = true;
   barricadeGroup.add(base);
 
-  // Spike geometry & material
+  // Spikes
   const spikeRadius = 0.12;
   const spikeHeight = 0.4;
   const spikeGeometry = new THREE.ConeGeometry(spikeRadius, spikeHeight, 4);
@@ -78,19 +94,18 @@ export function spawnBarricade(scene, heroBaseY, leftLane, rightLane) {
     roughness: 0.2,
   });
 
-  // === Top spikes ===
   const topSpikeCount = 5;
   for (let i = 0; i < topSpikeCount; i++) {
     const spike = new THREE.Mesh(spikeGeometry, silverSpikeMaterial);
     const spacing = baseWidth / (topSpikeCount + 1);
-    spike.position.set(-baseWidth/2 + spacing * (i + 1), baseHeight/2 + spikeHeight/2, 0);
+    spike.position.set(-baseWidth / 2 + spacing * (i + 1), baseHeight / 2 + spikeHeight / 2, 0);
     spike.rotation.y = Math.PI / 4;
     spike.castShadow = true;
     barricadeGroup.add(spike);
   }
-  // === Position barricade in world ===
+
   barricadeGroup.position.x = (leftLane + rightLane) / 2;
-  barricadeGroup.position.y = heroBaseY + baseHeight/2;
+  barricadeGroup.position.y = heroBaseY + baseHeight / 2;
   barricadeGroup.position.z = -100;
   barricadeGroup.userData.type = 'barricade';
 
@@ -98,14 +113,11 @@ export function spawnBarricade(scene, heroBaseY, leftLane, rightLane) {
   obstacles.push(barricadeGroup);
 }
 
-// Spawn a hole in the road
-const smokeParticles = [];
-
+// === HOLE ===
 export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
   const holeGroup = new THREE.Group();
   holeGroup.userData.type = 'hole';
 
-  // Dark circular pit
   const holeGeometry = new THREE.CircleGeometry(0.6, 32);
   const holeMaterial = new THREE.MeshStandardMaterial({
     color: 0x0d0d0d,
@@ -116,7 +128,6 @@ export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
   hole.rotation.x = -Math.PI / 2;
   hole.position.y = 0.01;
 
-  // Dark rim
   const rimGeometry = new THREE.RingGeometry(0.6, 0.75, 32);
   const rimMaterial = new THREE.MeshStandardMaterial({
     color: 0x3a3a3a,
@@ -129,7 +140,6 @@ export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
   holeGroup.add(hole);
   holeGroup.add(rim);
 
-  // Smoke particles
   const smokeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
   const smokeMaterial = new THREE.MeshStandardMaterial({
     color: 0x555555,
@@ -141,16 +151,15 @@ export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
   for (let i = 0; i < 15; i++) {
     const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial.clone());
     smoke.position.set(
-      (Math.random() - 0.5) * 0.6, // random X offset
-      0.05 + Math.random() * 0.2, // random Y offset
-      (Math.random() - 0.5) * 0.6  // random Z offset
+      (Math.random() - 0.5) * 0.6,
+      0.05 + Math.random() * 0.2,
+      (Math.random() - 0.5) * 0.6
     );
     smoke.scale.setScalar(0.5 + Math.random() * 0.5);
     holeGroup.add(smoke);
     smokeParticles.push({ mesh: smoke, speed: 0.001 + Math.random() * 0.002 });
   }
 
-  // Random lane positioning
   const lanes = [leftLane, middleLane, rightLane];
   const lane = lanes[Math.floor(Math.random() * lanes.length)];
   holeGroup.position.set(lane, heroBaseY, -100);
@@ -160,13 +169,34 @@ export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
   obstacles.push(holeGroup);
 }
 
-// Animate smoke over time
+// === RANDOM OBSTACLE SPAWN ===
+export function spawnRandomObstacle(scene, heroSphere, heroBaseY, leftLane, middleLane, rightLane) {
+  const rand = Math.random();
+
+  if (rand < 0.25) {
+    spawnRollingSphere(scene, leftLane, middleLane, rightLane);
+  } else if (rand < 0.5) {
+    spawnLog(scene, heroSphere, leftLane, middleLane, rightLane);
+  } else if (rand < 0.75) {
+    spawnBarricade(scene, heroBaseY, leftLane, rightLane);
+  } else {
+    spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane);
+  }
+
+  // Occasionally spawn two at once
+  if (Math.random() < 0.2 * difficultyLevel) {
+    const rand2 = Math.random();
+    if (rand2 < 0.5) spawnRollingSphere(scene, leftLane, middleLane, rightLane);
+    else spawnLog(scene, heroSphere, leftLane, middleLane, rightLane);
+  }
+}
+
+// === SMOKE UPDATE ===
 export function updateSmoke() {
   for (const { mesh, speed } of smokeParticles) {
-    mesh.position.y += speed; // rise up
-    mesh.material.opacity -= 0.002; // fade out slowly
+    mesh.position.y += speed;
+    mesh.material.opacity -= 0.002;
     if (mesh.material.opacity <= 0) {
-      // reset smoke puff to bottom
       mesh.position.y = 0.05 + Math.random() * 0.1;
       mesh.material.opacity = 0.4;
       mesh.position.x = (Math.random() - 0.5) * 0.6;
@@ -175,36 +205,52 @@ export function updateSmoke() {
   }
 }
 
-export function updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere) {
+// === DIFFICULTY UPDATE ===
+export function updateDifficulty(deltaTime) {
+  timeSinceLastSpawn += deltaTime;
+
+  if (difficultyLevel < 5 && Math.random() < 0.001) {
+    difficultyLevel += 0.1;
+    spawnInterval = Math.max(400, spawnInterval - 50);
+  }
+}
+
+// === OBSTACLE UPDATE ===
+export function updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere, deltaTime) {
+  updateDifficulty(deltaTime);
+
+  const now = performance.now();
+  if (now - lastSpawnTime > spawnInterval) {
+    spawnRandomObstacle(scene, heroSphere, heroBaseY, -2, 0, 2);
+    lastSpawnTime = now;
+  }
+
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
-    
+    let speedMultiplier = 1 + difficultyLevel * 0.2;
+
     switch (obs.userData.type) {
       case 'log':
-        if (obs.position.y > heroBaseY) {
-          obs.position.y -= 0.1;
-        }
-        obs.rotation.x += 0.1;
-        obs.position.z += rollingSpeed;
+        if (obs.position.y > heroBaseY) obs.position.y -= 0.1 * speedMultiplier;
+        obs.rotation.x += 0.1 * speedMultiplier;
+        obs.position.z += rollingSpeed * speedMultiplier;
         break;
-        
+
       case 'barricade':
-        obs.position.z += rollingSpeed;
+        obs.position.z += rollingSpeed * speedMultiplier;
         break;
 
       case 'rollingSphere':
-          obs.position.z += rollingSpeed * 3; // move toward player
-          obs.rotation.x += 0.3; // rolling animation
-          obs.rotation.z += 0.2;
-          break;
-        
+        obs.position.z += rollingSpeed * 3 * speedMultiplier;
+        obs.rotation.x += 0.3 * speedMultiplier;
+        obs.rotation.z += 0.2 * speedMultiplier;
+        break;
+
       case 'hole':
       default:
-        // Default behavior for any other obstacles
-        obs.position.z += rollingSpeed;
+        obs.position.z += rollingSpeed * speedMultiplier;
     }
-    
-    // Remove obstacle if it goes past the camera
+
     if (obs.position.z > 10) {
       scene.remove(obs);
       obstacles.splice(i, 1);
@@ -212,20 +258,17 @@ export function updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere) {
   }
 }
 
-// Check collision between hero and obstacles
+// === COLLISION DETECTION ===
 export function checkObstacleCollision(heroSphere, heroBaseY) {
   for (let i = 0; i < obstacles.length; i++) {
     const obs = obstacles[i];
-    
-    // Calculate distance between hero and obstacle
     const dx = heroSphere.position.x - obs.position.x;
     const dy = heroSphere.position.y - obs.position.y;
     const dz = heroSphere.position.z - obs.position.z;
     const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    
-    // Different collision radii for different obstacles
+
     let collisionRadius = 1.0;
-    
+
     switch (obs.userData.type) {
       case 'log':
         collisionRadius = 1.2;
@@ -235,27 +278,22 @@ export function checkObstacleCollision(heroSphere, heroBaseY) {
         break;
       case 'hole':
         collisionRadius = 0.8;
-        // Only collide if hero is on the ground (not jumping)
-        if (heroSphere.position.y > heroBaseY + 0.5) {
-          continue; // Skip collision if jumping over hole
-        }
+        if (heroSphere.position.y > heroBaseY + 0.5) continue;
         break;
-
       case 'rollingSphere':
-        collisionRadius = obs.userData.radius + 0.3; // sum of radii
+        collisionRadius = obs.userData.radius + 0.3;
         break;
-
     }
-    
+
     if (distance < collisionRadius) {
-      return true; // Collision detected
+      return true;
     }
   }
-  
-  return false; // No collision
+
+  return false;
 }
 
-// Helper exports
+// === HELPERS ===
 export function getObstacles() {
   return obstacles;
 }

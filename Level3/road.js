@@ -18,7 +18,7 @@ function loadTexture(path) {
 // Rock textures
 const rockTexture1 = loadTexture('./assets/textures/wall_stone.png');
 const rockTexture2 = loadTexture('./assets/textures/pebbles.jpg');
-const rockTexture3 = loadTexture('./assets/textures/brownWall.jpg');
+const rockTexture3 = loadTexture('./assets/textures/rock.jpeg');
 
 // Road texture
 const roadTexture = loadTexture('./assets/textures/sand1.jpeg');
