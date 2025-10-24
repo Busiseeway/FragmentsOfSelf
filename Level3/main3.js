@@ -10,13 +10,13 @@ import { addSideWaterfalls, waterfalls } from '../waterfalls.js';
 import { addEmotions, emotions, emotionTypes } from '../emotions.js';
 import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade, spawnHole, updateObstacles, clearObstacles, spawnRollingSphere } from './obstaclesL3.js';
-import { addSounds, sounds } from '../sounds.js';
+import { addSounds, sounds } from './sounds.js';
 
 let resetGame;
 
 export function startLevel3(){
 
-let rollingSpeed = 0.6;
+let rollingSpeed = 0.9;
 let heroRollingSpeed;
 let bounceValue = 0.02;
 let leftLane = -2;
@@ -70,7 +70,7 @@ function init() {
 }
 
 function setupPauseControls() {
-    pauseButton = document.getElementById('pause-btn');
+    pauseButton = document.getElementById('pause-btn1');
 
     if (pauseButton) {
         pauseButton.addEventListener('click', togglePause);
@@ -87,15 +87,15 @@ function togglePause() {
     isPaused = !isPaused;
 
     if (isPaused) {
-        pauseButton.textContent = 'Resume';
-        clock.stop();
-        console.log('Game Paused');
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
+      clock.stop();
+      console.log("Game Paused");
     } else {
-        pauseButton.textContent = 'Pause';
-        clock.start();
-        console.log('Game Resumed');
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;;
+      clock.start();
+      console.log("Game Resumed");
     }
-}
+  }
 
 function handleKeyDown(keyEvent) {
     // Left arrow
