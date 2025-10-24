@@ -77,7 +77,7 @@ export function startLevel1() {
   }
 
   function setupPauseControls() {
-    pauseButton = document.getElementById("pause-btn");
+    pauseButton = document.getElementById("pause-btn1");
 
     if (pauseButton) {
       pauseButton.addEventListener("click", togglePause);
