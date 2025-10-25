@@ -102,7 +102,7 @@ function handleCollision(heroSphere, heroBaseY, scene) {
   }
 }
 
-// Flash the hero red without errors for GLTF Group
+// Flash the hero red safely (works for GLTF too)
 function flashHero(heroSphere) {
   heroSphere.traverse((child) => {
     if (child.isMesh && child.material && child.material.color) {
@@ -113,6 +113,54 @@ function flashHero(heroSphere) {
       }, 200);
     }
   });
+}
+
+// Flash red for boundary penalty
+function flashHeroRed(heroSphere) {
+  heroSphere.traverse((child) => {
+    if (child.isMesh && child.material && child.material.color) {
+      const originalColor = child.material.color.getHex();
+      child.material.color.setHex(0xff0000);
+      setTimeout(() => {
+        child.material.color.setHex(originalColor);
+      }, 200);
+    }
+  });
+}
+
+// 🟥 Hitting edges (lane penalty)
+export function takeLanePenalty(heroSphere, direction) {
+  console.log("Boundary hit! Lost a heart.");
+
+  removeHeart();
+
+  // Flash red safely (works for GLTF too)
+  flashHeroRed(heroSphere);
+
+  // Bounce effect (visual feedback)
+  const originalX = heroSphere.position.x;
+  let velocity = direction * 0.3;
+  let damping = 0.85;
+  let oscillations = 0;
+
+  function animateShock() {
+    heroSphere.position.x += velocity;
+    velocity *= -damping;
+    oscillations++;
+    if (Math.abs(velocity) > 0.01 && oscillations < 10) {
+      requestAnimationFrame(animateShock);
+    } else {
+      heroSphere.position.x = originalX;
+    }
+  }
+
+  animateShock();
+
+  const remaining = getRemainingHearts();
+  if (remaining <= 0) {
+    console.log("No hearts left — triggering Game Over!");
+    gameOver();
+  }
 }
 
 // Create simple explosion effect
