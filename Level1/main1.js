@@ -74,7 +74,7 @@ export function startLevel1() {
     addHero(scene);
 
     // create hamburger in-game menu
-    createInGameMenu();
+    //createInGameMenu();
 
     setupPauseControls();
     createMenu3(startGame);
