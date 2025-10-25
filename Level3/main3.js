@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createMenu3 } from './menu3.js';
 
 import { createScene, scene, camera, renderer } from '../scene.js';
 import { addLight } from './lights.js';
@@ -10,7 +11,7 @@ import { addSideWaterfalls, waterfalls } from '../waterfalls.js';
 import { addEmotions, emotions, emotionTypes } from '../emotions.js';
 import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade, spawnHole, updateObstacles, clearObstacles, spawnRollingSphere } from './obstaclesL3.js';
-import { addSounds, sounds } from './sounds.js';
+import { addSounds, sounds } from './sounds3.js';
 
 let resetGame;
 
@@ -31,6 +32,9 @@ let pauseButton;
 let resumeButton;
 let sceneWidth = window.innerWidth;
 let sceneHeight = window.innerHeight;
+
+//theto menu
+let gameStarted = false;
 
 // Jump variables
 let jump_can = 1;
@@ -62,10 +66,23 @@ function init() {
     clock = new THREE.Clock();
 
     setupPauseControls();
+    //theto menu
+    createMenu3(startGame);
 
     window.addEventListener('resize', onWindowResize);
     document.addEventListener('keydown', handleKeyDown);
 
+    render();
+}
+
+
+
+function startGame() {
+    gameStarted = true;
+    clock.start();
+    lastObstacleTime = clock.getElapsedTime();
+    const spookyDance = sounds.find(s => s.name === 'spookyDance');
+    if (spookyDance) spookyDance.audio.play();
     update();
 }
 

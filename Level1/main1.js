@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { createMenu3 } from '../mainmenu.js';
+
 
 //mukondi
 import {
@@ -33,6 +35,7 @@ export function startLevel1() {
   let rightLane = 2;
   let middleLane = 0;
   let currentLane = middleLane;
+  let lastObstacleTime = 0;
   let clock;
   var score = 0;
   var scoreText;
@@ -45,6 +48,7 @@ export function startLevel1() {
   let resumeButton;
   let raycaster;
   let isFirstPerson = false;
+  let gameStarted = false;
 
   //theto
   let jump_can = 1;
@@ -60,22 +64,113 @@ export function startLevel1() {
     addRoad(scene);
     addLight(scene);
     addSideTrees(scene);
+    addSounds(scene, camera);
     //addObstacles();
     addEmotions(scene);
     addSideWaterfalls(scene); // Add waterfalls along the sides
     addHearts();
     clock = new THREE.Clock();
-    addSounds(scene, camera);
+
     addHero(scene);
 
-    update();
+    // create hamburger in-game menu
+    createInGameMenu();
 
     setupPauseControls();
+    createMenu3(startGame);
 
     window.addEventListener("resize", onWindowResize, false);
     document.addEventListener("keydown", handleKeyDown);
   }
 
+  function createInGameMenu() {
+    const menuBtn = document.createElement('div');
+    menuBtn.id = 'hamburger-menu';
+    menuBtn.innerHTML = '&#9776;';
+    menuBtn.style.cssText = `
+      position: fixed;
+      top: 30px;
+      left: 15px;
+      font-size: 40px;
+      color: white;
+      cursor: pointer;
+      z-index: 1500;
+    `;
+    document.body.appendChild(menuBtn);
+
+    const menuOverlay = document.createElement('div');
+    menuOverlay.id = 'in-game-menu';
+    menuOverlay.style.cssText = `
+      position: fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    `;
+    document.body.appendChild(menuOverlay);
+
+    resumeButton = document.createElement('button');
+    resumeButton.textContent = 'RESUME';
+    styleMenuButton(resumeButton);
+    resumeButton.addEventListener('click', () => {
+      menuOverlay.style.display = 'none';
+      if (isPaused) togglePause();
+    });
+
+    const controlsBtn = document.createElement('button');
+    controlsBtn.textContent = 'CONTROLS';
+    styleMenuButton(controlsBtn);
+    controlsBtn.addEventListener('click', () => {
+      alert(`Controls:\n← → Move\n↑ Jump\nV Change Camera\nSpace - Pause`);
+    });
+
+    menuOverlay.appendChild(resumeButton);
+    menuOverlay.appendChild(controlsBtn);
+
+    menuBtn.addEventListener('click', () => {
+      const isShowing = menuOverlay.style.display !== 'flex';
+      menuOverlay.style.display = isShowing ? 'flex' : 'none';
+      if (isShowing && !isPaused) togglePause(); // pause game when menu opens
+    });
+
+    function styleMenuButton(btn) {
+      btn.style.cssText = `
+        background: linear-gradient(135deg, #FFD700 0%, #ffcc00 100%);
+        color: #333;
+        border: none;
+        padding: 15px 50px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 15px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      `;
+      btn.addEventListener('mouseover', () => {
+        btn.style.transform = 'scale(1.1)';
+        btn.style.boxShadow = '0 0 25px rgba(255,215,0,0.7)';
+      });
+      btn.addEventListener('mouseout', () => {
+        btn.style.transform = 'scale(1)';
+        btn.style.boxShadow = 'none';
+      });
+    }
+  }
+
+  function startGame() {
+    gameStarted = true;
+    clock.start();
+    lastObstacleTime = clock.getElapsedTime();
+    update();
+  }
+
+  
   function setupPauseControls() {
     pauseButton = document.getElementById("pause-btn1");
 
