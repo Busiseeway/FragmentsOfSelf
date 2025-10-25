@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createMenu3 } from '../mainmenu.js';
+
 
 
 //mukondi
@@ -72,12 +72,15 @@ export function startLevel1() {
     clock = new THREE.Clock();
 
     addHero(scene);
+    startGame();
 
     // create hamburger in-game menu
-    createInGameMenu();
+    //createInGameMenu();
+
+    
 
     setupPauseControls();
-    createMenu3(startGame);
+    
 
     window.addEventListener("resize", onWindowResize, false);
     document.addEventListener("keydown", handleKeyDown);
