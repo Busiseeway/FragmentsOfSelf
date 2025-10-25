@@ -40,13 +40,7 @@ export function createMenu3(onStartCallback) {
   // Instructions
   const instructions = document.createElement('div');
   instructions.innerHTML = `
-      <p style="color: white; font-size: 16px; margin: 15px 0;">
-          <strong>Controls:</strong><br>
-          ← → Arrow keys to change lanes<br>
-          ↑ Arrow key to jump<br>
-          ↓ Arrow key to slide<br>
-          v To change camera view<br>
-      </p>
+      
       <p style="color: #FFD700; font-size: 18px; margin: 15px 0;">
           The picture is getting more clear, the monster is starting to remember. It's getting harder to collect the emotions. FOCUS, collect them all!
       </p>
