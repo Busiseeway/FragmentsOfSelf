@@ -17,7 +17,7 @@ let resetGame;
 
 export function startLevel3(){
 
-let rollingSpeed = 0.6;
+let rollingSpeed = 0.9;
 let heroRollingSpeed;
 let bounceValue = 0.02;
 let leftLane = -2;
@@ -40,6 +40,7 @@ let gameStarted = false;
 let jump_can = 1;
 let velocity_y = 0;
 let velocity_z = 0;
+let slide_can =1;
 
 // Obstacle spawning
 let lastObstacleTime = 0;
@@ -86,7 +87,7 @@ function startGame() {
 }
 
 function setupPauseControls() {
-    pauseButton = document.getElementById('pause-btn');
+    pauseButton = document.getElementById('pause-btn1');
 
     if (pauseButton) {
         pauseButton.addEventListener('click', togglePause);
@@ -103,15 +104,15 @@ function togglePause() {
     isPaused = !isPaused;
 
     if (isPaused) {
-        pauseButton.textContent = 'Resume';
-        clock.stop();
-        console.log('Game Paused');
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
+      clock.stop();
+      console.log("Game Paused");
     } else {
-        pauseButton.textContent = 'Pause';
-        clock.start();
-        console.log('Game Resumed');
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;;
+      clock.start();
+      console.log("Game Resumed");
     }
-}
+  }
 
 function handleKeyDown(keyEvent) {
     // Left arrow
@@ -135,12 +136,18 @@ function handleKeyDown(keyEvent) {
     }
 
     // Up arrow — jump
-    else if (keyEvent.keyCode === 38 && jump_can === 1) {
+    else if (keyEvent.keyCode === 38 && jump_can == 1) { // up arrow - jump
         jump_can = 0;
-        velocity_y = 16;
-        velocity_z = -1;
-
-        playJumpAnimation();
+        velocity_y = 15;
+        
+        playJumpAnimation('jump'); // Trigger jump animation
+    }
+    //down arrow - slide
+     else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
+        slide_can = 0;
+        velocity_y = 10;
+        
+        playJumpAnimation('slide'); // Trigger jump animation
     }
 
     // Spacebar — pause

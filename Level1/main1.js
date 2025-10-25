@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { createMenu3 } from '../mainmenu.js';
 
+
 //mukondi
 import {
   addRollingLogs,
@@ -18,9 +19,9 @@ import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
 import { addRoad, roadSegments } from "./road.js";
 import { createScene, scene, camera, renderer } from "./scene.js";
 import { addLight } from "./lights.js";
-import { addSounds, sounds } from './sounds1.js';
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {sounds,addSounds} from './sounds.js';
 
 export function startLevel1() {
   let road, heroSphere;
@@ -52,6 +53,7 @@ export function startLevel1() {
   //theto
   let jump_can = 1;
   let velocity_y = 0;
+  let velocity_z = 0;
   let delta = 0;
 
   init();
@@ -168,21 +170,18 @@ export function startLevel1() {
     update();
   }
 
+  
   function setupPauseControls() {
-    pauseButton = document.getElementById("pause-btn");
+    pauseButton = document.getElementById("pause-btn1");
 
-    // Pause button click
-    //if (pauseButton) {
-      //pauseButton.addEventListener("click", togglePause);
-    //} else {
-      //console.error("Pause button not found!");
-    //}
+    if (pauseButton) {
+      pauseButton.addEventListener("click", togglePause);
+    } else {
+      console.error("Pause button not found!");
+    }
 
-    // Hamburger menu resume button click
     if (resumeButton) {
-      resumeButton.addEventListener("click", () => {
-        if (isPaused) togglePause(); // Resume game if paused
-      });
+      resumeButton.addEventListener("click", togglePause);
     }
   }
 
@@ -190,13 +189,11 @@ export function startLevel1() {
     isPaused = !isPaused;
 
     if (isPaused) {
-      // Pausing
-      //if (pauseButton) pauseButton.textContent = "Resume";
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
       clock.stop();
       console.log("Game Paused");
     } else {
-      // Resuming
-      //if (pauseButton) pauseButton.textContent = "Pause";
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;;
       clock.start();
       console.log("Game Resumed");
     }
@@ -205,50 +202,68 @@ export function startLevel1() {
   function handleKeyDown(keyEvent) {
     if (keyEvent.keyCode === 37) {
       // left
-      if (currentLane > leftLane) currentLane -= 2;
+      if (currentLane > leftLane) {
+        currentLane -= 2;
+      }
     } else if (keyEvent.keyCode === 39) {
       // right
-      if (currentLane < rightLane) currentLane += 2;
-    } else if (keyEvent.keyCode === 38 && jump_can == 1) {
-      // up
+      if (currentLane < rightLane) {
+        currentLane += 2;
+      }
+    }
+    //theto
+    else if (keyEvent.keyCode === 38 && jump_can == 1) {
+      //up
       jump_can = 0;
-      heroSphere.position.z -= 1;
+      velocity_z =- 1;
       velocity_y = 16;
-    } else if (keyEvent.key === "v" || keyEvent.key === "V") {
+    }
+
+    //mukondi
+    else if (keyEvent.key === "v" || keyEvent.key === "V") {
       toggleCameraView();
-    } else if (keyEvent.keyCode === 32) {
-      // Spacebar — pause
+    }
+    // Spacebar — pause
+    else if (keyEvent.keyCode === 32) {
       keyEvent.preventDefault();
       togglePause();
       return;
     }
   }
-
   function toggleCameraView() {
     isFirstPerson = !isFirstPerson;
 
     if (isFirstPerson) {
+      // Switch to First-Person
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
+      // Position camera relative to character
       camera.position.copy(heroSphere.position);
-      camera.position.y += heroBaseY / 2;
+      camera.position.y += heroBaseY / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.rotation.copy(heroSphere.rotation);
+      camera.rotation.copy(heroSphere.rotation); // Align camera with character's forward
     } else {
+      // Switch to Third-Person
       PointerLockControls.enabled = false;
       OrbitControls.enabled = true;
+
+      // Reposition camera for third-person view
+      // (This might involve setting orbitControls target and camera position)
       controls = new OrbitControls(camera, renderer.domElement);
+      //controls.target.set( 0, 0, 0 ); // Set the target to the origin
+      //OrbitControls.target.copy(heroSphere.position);
+      // camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
       camera.position.set(0, 4, 8);
       camera.lookAt(0, 0, 0);
     }
   }
-
   function updateCamera() {
     if (isFirstPerson) {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
+      // Position camera relative to character
       camera.position.copy(heroSphere.position);
-      camera.position.y += heroBaseY / 2;
+      camera.position.y += heroBaseY / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
       camera.rotation.copy(heroSphere.rotation);
     } else {
@@ -283,6 +298,7 @@ export function startLevel1() {
     heroSphere.position.y = heroBaseY;
     heroSphere.position.z = 0;
     heroSphere.position.x = currentLane;
+    //heroSphere.add(camera);
   }
 
   function update() {
@@ -294,16 +310,18 @@ export function startLevel1() {
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
 
-    // move trees
     treeGroups.forEach((tree) => {
       tree.position.z += rollingSpeed;
-      if (tree.position.z > 20) tree.position.z -= 200;
+      if (tree.position.z > 20) {
+        tree.position.z -= 200;
+      }
     });
 
-    // jump animation
+    //theto (jump animation when up key is pressed)
     if (jump_can === 0) {
       heroSphere.position.y += velocity_y * deltaTime;
       velocity_y -= 45 * deltaTime;
+
       if (heroSphere.position.y <= heroBaseY) {
         heroSphere.position.y = heroBaseY;
         velocity_y = 0;
@@ -313,77 +331,126 @@ export function startLevel1() {
       heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
     }
 
-    // spawn random obstacles
-    if (Math.random() < 0.01) {
+    //update cylinder rolling
+    // obstacles.forEach(obstacle =>{
+
+    // })
+    //pabii
+    // Spawn random obstacle (low probability each frame)
+    if (Math.random() < 0.015) {
+      // adjust 0.01 to control frequency
       const choice = Math.random();
-      if (choice < 0.4) addRollingLogs(scene);
-      else if (choice < 0.7) spawnBoulder(scene, heroSphere, leftLane, middleLane, rightLane);
+      if (choice < 0.4) {
+        addRollingLogs(scene); // log
+      } else if (choice < 0.7) {
+        spawnBoulder(scene, heroSphere, leftLane, middleLane, rightLane); // trees
+      } else {
+        // spawnBoulder();    // rolling boulder
+      }
     }
-
+    //update obstacles
     updateObstacles(scene, rollingSpeed, heroBaseY);
+    //check collision
     checkCollisions(heroSphere, heroBaseY, scene);
-
     // Smooth lane changing
-    heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 5 * deltaTime);
+    heroSphere.position.x = THREE.MathUtils.lerp(
+      heroSphere.position.x,
+      currentLane,
+      5 * deltaTime
+    );
 
-    // Move road segments
+    // Add subtle bouncing
+    //heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+
+    // Move road segments to create infinite road effect
     roadSegments.forEach((segment) => {
       segment.position.z += rollingSpeed;
-      if (segment.position.z > 20) segment.position.z -= roadSegments.length * 20;
+      if (segment.position.z > 20) {
+        segment.position.z -= roadSegments.length * 20;
+      }
     });
 
-    // Move waterfalls
+    // Move waterfalls to create infinite effect
     waterfalls.forEach((waterfall) => {
       waterfall.position.z += rollingSpeed;
-      if (waterfall.position.z > 25) waterfall.position.z -= 300;
-      const waterMesh = waterfall.children[1];
-      const mistParticles = waterfall.children[3];
-      const pool = waterfall.children[2];
+      if (waterfall.position.z > 25) {
+        waterfall.position.z -= 300; // Reset further back
+      }
+
+      // Animate water flow and mist
+      const waterMesh = waterfall.children[1]; // Water plane
+      const mistParticles = waterfall.children[3]; // Mist particles
+      const pool = waterfall.children[2]; // Water pool
+
       if (waterMesh && waterMesh.geometry) {
+        // Animate water flowing down
         const positions = waterMesh.geometry.attributes.position.array;
-        for (let i = 0; i < positions.length; i += 9) positions[i] += Math.sin(distance * 10 + i) * 0.01;
+        for (let i = 0; i < positions.length; i += 9) {
+          // Every 3 vertices
+          positions[i] += Math.sin(distance * 10 + i) * 0.01; // Flowing motion
+        }
         waterMesh.geometry.attributes.position.needsUpdate = true;
       }
+
+      // Animate mist particles
       if (mistParticles) {
         mistParticles.rotation.y += 0.01;
         mistParticles.position.y = 2 + Math.sin(distance * 5) * 0.2;
       }
+
+      // Animate water pool
       if (pool) {
         pool.rotation.y += 0.02;
         pool.material.opacity = 0.6 + Math.sin(distance * 8) * 0.2;
       }
     });
 
+    // Update camera to follow slightly
     updateCamera();
+    //camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
 
-    // Update emotions
     emotions.forEach((emotion) => {
       if (!emotion.userData.collected) {
-        emotion.position.z += rollingSpeed * 0.8;
+        emotion.position.z += rollingSpeed ; // move towards player
+
+        // Collision detection (simple distance check)
         const dx = heroSphere.position.x - emotion.position.x;
         const dy = heroSphere.position.y - emotion.position.y;
         const dz = heroSphere.position.z - emotion.position.z;
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
         if (dist < 1) {
+          // collision radius
           score += emotion.userData.score;
           document.getElementById("score").textContent = "Score: " + score;
-          console.log("Collected " + emotion.userData.type + "! Score: " + score);
+          console.log(
+            "Collected " + emotion.userData.type + "! Score: " + score
+          );
+
+          // Reset emotion immediately after collection
           const lanes = [-2, 0, 2];
           emotion.position.x = lanes[Math.floor(Math.random() * 3)];
           emotion.position.z = -200 - Math.random() * 200;
           emotion.userData.collected = false;
-          const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+
+          const newType =
+            emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
           emotion.material.color.set(newType.color);
           emotion.userData.type = newType.name;
         }
+
+        // Reset if emotion goes behind hero
         if (emotion.position.z > 10) {
           const lanes = [-2, 0, 2];
-          emotion.position.x = lanes[Math.floor(Math.random() * 3)];
-          emotion.position.z = -200 - Math.random() * 200;
+          emotion.position.x = lanes[Math.floor(Math.random() * 3)]; // pick random lane
+          emotion.position.z = -200 - Math.random() * 200; // random depth
           emotion.userData.collected = false;
-          const newType = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+
+          const newType =
+            emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
           emotion.material.color.set(newType.color);
           emotion.userData.type = newType.name;
+
           scene.add(emotion);
         }
       }
@@ -398,12 +465,21 @@ export function startLevel1() {
   }
 
   function resetGame() {
+    // Clear all obstacles
     clearObstacles(scene);
+
+    // Reset hero position
     currentLane = middleLane;
     heroSphere.position.set(currentLane, heroBaseY, 0);
+
+    // Reset game variables
     distance = 0;
     score = 0;
     document.getElementById("score").textContent = "Score: " + score;
+
+    // Reset clock
     lastObstacleTime = clock.getElapsedTime();
   }
+  // Export resetGame if needed elsewhere
+  //export { resetGame };
 }

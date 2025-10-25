@@ -13,5 +13,5 @@ if (path === '/level3') {
         level1.startLevel1();
     }).catch(err => console.error("Failed to load level:", err));
 } else {
-    console.error("Level not found");
+  console.error("Level not found");
 }
