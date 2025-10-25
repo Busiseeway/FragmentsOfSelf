@@ -119,6 +119,47 @@ function handleCollision(heroSphere, heroBaseY, scene) {
   }
 }
 
+// NEW: Hitting lane boundaries
+export function takeLanePenalty(heroSphere, direction) {
+  console.log("Boundary hit! Lost a heart.");
+
+  removeHeart();
+
+  // Flash red
+  if (heroSphere.material && heroSphere.material.color) {
+    const originalColor = heroSphere.material.color.getHex();
+    heroSphere.material.color.setHex(0xff0000);
+    setTimeout(() => {
+      heroSphere.material.color.setHex(originalColor);
+    }, 200);
+  }
+
+  // Bounce effect (visual feedback)
+  const originalX = heroSphere.position.x;
+  let velocity = direction * 0.3;
+  let damping = 0.85;
+  let oscillations = 0;
+
+  function animateShock() {
+    heroSphere.position.x += velocity;
+    velocity *= -damping;
+    oscillations++;
+    if (Math.abs(velocity) > 0.01 && oscillations < 10) {
+      requestAnimationFrame(animateShock);
+    } else {
+      heroSphere.position.x = originalX;
+    }
+  }
+
+  animateShock();
+
+  const remaining = getRemainingHearts();
+  if (remaining <= 0) {
+    console.log("No hearts left — triggering Game Over!");
+    gameOver();
+  }
+}
+
 export function removeHeart() {
   if (hearts.length > 0) {
     const heart = hearts.pop();

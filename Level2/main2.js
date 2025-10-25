@@ -9,7 +9,7 @@ import {
   updateObstacles,
   clearObstacles,
 } from "./obstacles.js";
-import { addHearts, checkCollisions, resetHearts } from "./healthBar.js";
+import { addHearts, checkCollisions, resetHearts , takeLanePenalty} from "./healthBar.js";
 import { addRoad, roadSegments, waterSegments } from "./road.js";
 import { addSideTrees, treeGroups } from "./trees.js";
 import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
@@ -176,11 +176,18 @@ function togglePause() {
       if (currentLane > leftLane) {
         currentLane -= 2;
       }
+      else {
+            // Already at leftmost lane
+            takeLanePenalty(heroSphere, -1);
+      }
     } else if (keyEvent.keyCode === 39) {
       // right
       if (currentLane < rightLane) {
         currentLane += 2;
-      }
+      }else {
+            // Already at rightmost lane
+            takeLanePenalty(heroSphere, 1);
+        }
     } else if (keyEvent.keyCode === 38 && jump_can == 1) {
       // up
       jump_can = 0;

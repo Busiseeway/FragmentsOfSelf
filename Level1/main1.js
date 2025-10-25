@@ -1,7 +1,5 @@
 import * as THREE from "three";
 
-
-
 //mukondi
 import {
   addRollingLogs,
@@ -12,7 +10,7 @@ import {
   addObstacles,
 } from "./obstacles1.js";
 import { addEmotions, emotions, emotionTypes } from "./emotions.js";
-import { addHearts, checkCollisions, resetHearts } from "./healthBar.js";
+import { addHearts, checkCollisions, resetHearts, takeLanePenalty } from "./healthBar.js";
 import { createRealisticStone } from "./stones.js";
 import { addSideTrees, treeGroups } from "./trees.js";
 import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
@@ -210,45 +208,48 @@ export function startLevel1() {
   }
 
   function handleKeyDown(keyEvent) {
+    // Left arrow
     if (keyEvent.keyCode === 37) {
-      // left
       if (currentLane > leftLane) {
         currentLane -= 2;
+      } else {
+        // Already at leftmost lane - take penalty
+        takeLanePenalty(heroSphere, -1);
       }
-    } else if (keyEvent.keyCode === 39) {
-      // right
+    } 
+    // Right arrow
+    else if (keyEvent.keyCode === 39) {
       if (currentLane < rightLane) {
         currentLane += 2;
+      } else {
+        // Already at rightmost lane - take penalty
+        takeLanePenalty(heroSphere, 1);
       }
     }
-    //theto
+    // Up arrow - jump
     else if (keyEvent.keyCode === 38 && jump_can == 1) {
-      //up
       jump_can = 0;
-      //velocity_z =- 1;
       velocity_y = 15;
-      playJumpAnimation('jump'); // Trigger jump animation
+      playJumpAnimation('jump');
     }
-    //Mmakwena
-    //down arrow - slide
-     else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
-        slide_can = 0;
-        velocity_y = 10;
-        
-        playJumpAnimation('slide'); // Trigger jump animation
+    // Down arrow - slide
+    else if (keyEvent.keyCode === 40 && slide_can == 1) {
+      slide_can = 0;
+      velocity_y = 10;
+      playJumpAnimation('slide');
     }
-
-    //mukondi
+    // V - toggle camera
     else if (keyEvent.key === "v" || keyEvent.key === "V") {
       toggleCameraView();
     }
-    // Spacebar — pause
+    // Spacebar - pause
     else if (keyEvent.keyCode === 32) {
       keyEvent.preventDefault();
       togglePause();
       return;
     }
   }
+
   function toggleCameraView() {
     isFirstPerson = !isFirstPerson;
 
@@ -276,6 +277,7 @@ export function startLevel1() {
       camera.lookAt(0, 0, 0);
     }
   }
+
   function updateCamera() {
     if (isFirstPerson) {
       OrbitControls.enabled = false;
@@ -301,25 +303,6 @@ export function startLevel1() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  // function addHero() {
-  //   const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
-  //   const sphereMaterial = new THREE.MeshStandardMaterial({
-  //     color: 0x4a90e2,
-  //     flatShading: true,
-  //     metalness: 0.3,
-  //     roughness: 0.4,
-  //   });
-
-  //   heroSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-  //   heroSphere.receiveShadow = true;
-  //   heroSphere.castShadow = true;
-  //   scene.add(heroSphere);
-  //   heroSphere.position.y = heroBaseY;
-  //   heroSphere.position.z = 0;
-  //   heroSphere.position.x = currentLane;
-  //   //heroSphere.add(camera);
-  // }
-
   function update() {
     if (isPaused) {
       render();
@@ -340,9 +323,7 @@ export function startLevel1() {
       }
     });
 
-    //Mmakwena Commented here
     //theto (jump animation when up key is pressed)
-    
     if (jump_can === 0) {
       heroSphere.position.y += velocity_y * deltaTime;
       velocity_y -= 45 * deltaTime;
@@ -356,7 +337,7 @@ export function startLevel1() {
       heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
     }
 
-     //slide animation when down key is pressed
+    //slide animation when down key is pressed
     if (slide_can === 0) {
         heroSphere.position.y += velocity_y * deltaTime;
         velocity_y -= 45 * deltaTime; 
@@ -370,36 +351,27 @@ export function startLevel1() {
         }
     } 
 
-    //update cylinder rolling
-    // obstacles.forEach(obstacle =>{
-
-    // })
-    //pabii
     // Spawn random obstacle (low probability each frame)
     if (Math.random() < 0.015) {
-      // adjust 0.01 to control frequency
       const choice = Math.random();
       if (choice < 0.4) {
-        addRollingLogs(scene); // log
+        addRollingLogs(scene);
       } else if (choice < 0.7) {
-        spawnBoulder(scene, heroSphere, leftLane, middleLane, rightLane); // trees
-      } else {
-        // spawnBoulder();    // rolling boulder
+        spawnBoulder(scene, heroSphere, leftLane, middleLane, rightLane);
       }
     }
+
     //update obstacles
     updateObstacles(scene, rollingSpeed, heroBaseY);
     //check collision
     checkCollisions(heroSphere, heroBaseY, scene);
+
     // Smooth lane changing
     heroSphere.position.x = THREE.MathUtils.lerp(
       heroSphere.position.x,
       currentLane,
       5 * deltaTime
     );
-
-    // Add subtle bouncing
-    //heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
 
     // Move road segments to create infinite road effect
     roadSegments.forEach((segment) => {
@@ -425,8 +397,7 @@ export function startLevel1() {
         // Animate water flowing down
         const positions = waterMesh.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 9) {
-          // Every 3 vertices
-          positions[i] += Math.sin(distance * 10 + i) * 0.01; // Flowing motion
+          positions[i] += Math.sin(distance * 10 + i) * 0.01;
         }
         waterMesh.geometry.attributes.position.needsUpdate = true;
       }
@@ -446,7 +417,6 @@ export function startLevel1() {
 
     // Update camera to follow slightly
     updateCamera();
-    //camera.position.z = THREE.MathUtils.lerp(camera.position.z, heroSphere.position.z + 8, 2 * deltaTime);
 
     emotions.forEach((emotion) => {
       if (!emotion.userData.collected) {
@@ -481,8 +451,8 @@ export function startLevel1() {
         // Reset if emotion goes behind hero
         if (emotion.position.z > 10) {
           const lanes = [-2, 0, 2];
-          emotion.position.x = lanes[Math.floor(Math.random() * 3)]; // pick random lane
-          emotion.position.z = -200 - Math.random() * 200; // random depth
+          emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+          emotion.position.z = -200 - Math.random() * 200;
           emotion.userData.collected = false;
 
           const newType =
@@ -520,6 +490,4 @@ export function startLevel1() {
     // Reset clock
     lastObstacleTime = clock.getElapsedTime();
   }
-  // Export resetGame if needed elsewhere
-  //export { resetGame };
 }
