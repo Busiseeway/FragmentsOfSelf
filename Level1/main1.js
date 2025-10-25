@@ -77,8 +77,6 @@ export function startLevel1() {
     // create hamburger in-game menu
     //createInGameMenu();
 
-    
-
     setupPauseControls();
     
 
