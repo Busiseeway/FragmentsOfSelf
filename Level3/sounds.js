@@ -18,7 +18,8 @@ audioLoader.load( 'assets/sounds/Spooky_Dance.mp3', function( buffer ) {
 	sound.setBuffer( buffer );
 	sound.setLoop( true );
 	sound.setVolume( 0.5);
-	//sound.play();
+	sound.play();
+	isPlaying = true;
 });
  toggleButton.addEventListener('click', function() {
 		if (isPlaying) {

@@ -22,13 +22,16 @@ import { addLight } from "./lights.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {sounds,addSounds} from './sounds.js';
+//Mmakwena
+import { addHero, heroSphere, heroBaseY, updateHero, playJumpAnimation } from '../hero.js';
 
 export function startLevel1() {
-  let road, heroSphere;
+  //let road, heroSphere;
+  let road;
   let rollingSpeed = 0.2;
   let heroRollingSpeed;
   let heroRadius = 0.3;
-  let heroBaseY = 0.5;
+  //let heroBaseY = 0.5;
   let bounceValue = 0.02;
   let gravity = 0.002;
   let leftLane = -2;
@@ -55,6 +58,8 @@ export function startLevel1() {
   let velocity_y = 0;
   let velocity_z = 0;
   let delta = 0;
+  //Mmakwena
+  let slide_can =1;
 
   init();
 
@@ -70,9 +75,11 @@ export function startLevel1() {
     addSideWaterfalls(scene); // Add waterfalls along the sides
     addHearts();
     clock = new THREE.Clock();
+    //Mmakwena
+    //addHero(scene);
 
-    addHero(scene);
-    startGame();
+    addHero(scene, currentLane);
+    
 
     // create hamburger in-game menu
     //createInGameMenu();
@@ -82,6 +89,8 @@ export function startLevel1() {
 
     window.addEventListener("resize", onWindowResize, false);
     document.addEventListener("keydown", handleKeyDown);
+
+    startGame();
   }
 
   function createInGameMenu() {
@@ -216,8 +225,17 @@ export function startLevel1() {
     else if (keyEvent.keyCode === 38 && jump_can == 1) {
       //up
       jump_can = 0;
-      velocity_z =- 1;
-      velocity_y = 16;
+      //velocity_z =- 1;
+      velocity_y = 15;
+      playJumpAnimation('jump'); // Trigger jump animation
+    }
+    //Mmakwena
+    //down arrow - slide
+     else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
+        slide_can = 0;
+        velocity_y = 10;
+        
+        playJumpAnimation('slide'); // Trigger jump animation
     }
 
     //mukondi
@@ -283,24 +301,24 @@ export function startLevel1() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  function addHero() {
-    const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
-    const sphereMaterial = new THREE.MeshStandardMaterial({
-      color: 0x4a90e2,
-      flatShading: true,
-      metalness: 0.3,
-      roughness: 0.4,
-    });
+  // function addHero() {
+  //   const sphereGeometry = new THREE.DodecahedronGeometry(heroRadius, 1);
+  //   const sphereMaterial = new THREE.MeshStandardMaterial({
+  //     color: 0x4a90e2,
+  //     flatShading: true,
+  //     metalness: 0.3,
+  //     roughness: 0.4,
+  //   });
 
-    heroSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    heroSphere.receiveShadow = true;
-    heroSphere.castShadow = true;
-    scene.add(heroSphere);
-    heroSphere.position.y = heroBaseY;
-    heroSphere.position.z = 0;
-    heroSphere.position.x = currentLane;
-    //heroSphere.add(camera);
-  }
+  //   heroSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  //   heroSphere.receiveShadow = true;
+  //   heroSphere.castShadow = true;
+  //   scene.add(heroSphere);
+  //   heroSphere.position.y = heroBaseY;
+  //   heroSphere.position.z = 0;
+  //   heroSphere.position.x = currentLane;
+  //   //heroSphere.add(camera);
+  // }
 
   function update() {
     if (isPaused) {
@@ -310,6 +328,10 @@ export function startLevel1() {
     }
     const deltaTime = clock.getDelta();
     distance += rollingSpeed;
+    updateHero(deltaTime);
+    if (heroSphere){
+
+    
 
     treeGroups.forEach((tree) => {
       tree.position.z += rollingSpeed;
@@ -318,7 +340,9 @@ export function startLevel1() {
       }
     });
 
+    //Mmakwena Commented here
     //theto (jump animation when up key is pressed)
+    
     if (jump_can === 0) {
       heroSphere.position.y += velocity_y * deltaTime;
       velocity_y -= 45 * deltaTime;
@@ -331,6 +355,20 @@ export function startLevel1() {
     } else {
       heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
     }
+
+     //slide animation when down key is pressed
+    if (slide_can === 0) {
+        heroSphere.position.y += velocity_y * deltaTime;
+        velocity_y -= 45 * deltaTime; 
+        
+
+        if (heroSphere.position.y <= heroBaseY) {
+            heroSphere.position.y = heroBaseY;
+            velocity_y = 0;
+            slide_can = 1; 
+            
+        }
+    } 
 
     //update cylinder rolling
     // obstacles.forEach(obstacle =>{
@@ -456,6 +494,7 @@ export function startLevel1() {
         }
       }
     });
+  }
 
     render();
     requestAnimationFrame(update);

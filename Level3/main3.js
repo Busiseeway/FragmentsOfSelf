@@ -11,7 +11,7 @@ import { addSideWaterfalls, waterfalls } from '../waterfalls.js';
 import { addEmotions, emotions, emotionTypes } from '../emotions.js';
 import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade, spawnHole, updateObstacles, clearObstacles, spawnRollingSphere } from './obstaclesL3.js';
-import { addSounds, sounds } from './sounds3.js';
+import { addSounds, sounds } from './sounds.js';
 
 let resetGame;
 
@@ -108,7 +108,7 @@ function togglePause() {
       clock.stop();
       console.log("Game Paused");
     } else {
-      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;;
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;
       clock.start();
       console.log("Game Resumed");
     }
@@ -216,6 +216,19 @@ function update() {
         } else {
             heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
         }
+         //slide animation when down key is pressed
+        if (slide_can === 0) {
+            heroSphere.position.y += velocity_y * deltaTime;
+            velocity_y -= 45 * deltaTime; 
+            
+
+            if (heroSphere.position.y <= heroBaseY) {
+                heroSphere.position.y = heroBaseY;
+                velocity_y = 0;
+                slide_can = 1; 
+                
+            }
+        } 
 
         // Move road segments
         roadSegments.forEach(segment => {

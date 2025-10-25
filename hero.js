@@ -81,7 +81,7 @@ export function playJumpAnimation(type) {
   if (type=='jump' && animations.jump && !isJumping) {
     switchAnimation(animations.jump);
     isJumping = true;
-
+    console.log("Jumping");
     // Return to idle after short delay
     setTimeout(() => {
       switchAnimation(animations.idle);
@@ -91,7 +91,7 @@ export function playJumpAnimation(type) {
   else if (type=='slide' && animations.slide && !isSliding) {
     switchAnimation(animations.slide);
     isSliding = true;
-
+    console.log("Sliding");
     // Return to idle after short delay
     setTimeout(() => {
       switchAnimation(animations.idle);
@@ -107,4 +107,4 @@ function switchAnimation(newAction) {
   currentAction = newAction;
 }
 
-export { heroSphere, heroBaseY, heroRadius };
+export {heroSphere, heroBaseY, heroRadius};

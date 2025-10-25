@@ -15,6 +15,7 @@ export function addSounds(scene, camera){
         spookyDance.setLoop(true);
         spookyDance.setVolume(0.5);
         // do not play yet
+        spookyDance.play();
     });
 
     sounds.push({ name: 'spookyDance', audio: spookyDance });

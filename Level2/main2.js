@@ -25,6 +25,10 @@ import {
 import { addLight, createLightning, flash } from "./lighting.js";
 import { addSideRailings, railings } from "./railings.js";
 
+//Mmakwena
+import { addSounds, sounds } from './sounds2.js';
+import { add } from "three/src/nodes/TSL.js";
+
 export function startLevel2() {
   let gameStarted = false;
   let rollingSpeed = 0.6;
@@ -40,11 +44,18 @@ export function startLevel2() {
   let distance = 0;
   let score = 0;
 
+  //Mmakwena - pause and play
+  let pauseButton;
+  let resumeButton;
+ 
+
   //theto
   let jump_can = 1;
   let velocity_y = 0;
   let isPaused = false;
 
+  //Mmakwena
+  let slide_can=1;
   // ----- DENSE RAIN VARIABLES -----
   let rain, rainGeo, rainVelocities;
   const rainCount = 5000; // heavy rain
@@ -108,6 +119,10 @@ export function startLevel2() {
     //theto menu2
     createMenu2(startGame);
 
+    //Mmakwena pause controls 
+    setupPauseControls()
+    addSounds(scene, camera);
+
     window.addEventListener("resize", onWindowResize, false);
     document.addEventListener("keydown", handleKeyDown);
 
@@ -121,9 +136,38 @@ export function startLevel2() {
     update();
   }
 
-  function togglePause() {
+  //Mmakwena Commented
+  //using same buttons in all levels
+  // function togglePause() {
+  //   isPaused = !isPaused;
+  //   console.log(isPaused ? "Game Paused" : "Game Resumed");
+  // }
+  function setupPauseControls() {
+    pauseButton = document.getElementById('pause-btn1');
+
+    if (pauseButton) {
+        pauseButton.addEventListener('click', togglePause);
+    } else {
+        console.error('Pause button not found!');
+    }
+
+    if (resumeButton) {
+        resumeButton.addEventListener('click', togglePause);
+    }
+}
+
+function togglePause() {
     isPaused = !isPaused;
-    console.log(isPaused ? "Game Paused" : "Game Resumed");
+
+    if (isPaused) {
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
+      clock.stop();
+      console.log("Game Paused");
+    } else {
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;
+      clock.start();
+      console.log("Game Resumed");
+    }
   }
 
   function handleKeyDown(keyEvent) {
@@ -140,18 +184,44 @@ export function startLevel2() {
     } else if (keyEvent.keyCode === 38 && jump_can == 1) {
       // up
       jump_can = 0;
-      velocity_y = 16;
+      velocity_y = 15;
+      playJumpAnimation('jump'); // Trigger jump animation
+    }
+    else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
+        slide_can = 0;
+        velocity_y = 10;
+        
+        playJumpAnimation('slide'); // Trigger jump animation
+    }
+    //Mmakwena
+    // Spacebar — pause
+    else if (keyEvent.keyCode === 32) {
+        keyEvent.preventDefault();
+        togglePause();
+        return;
     }
   }
 
   function update() {
-    if (!heroSphere) return requestAnimationFrame(update); // safety check
-    if (!isPaused) {
-      const deltaTime = clock.getDelta();
-      distance += rollingSpeed;
+    if (isPaused) {
+        render();
+        requestAnimationFrame(update);
+        return;
+    }
 
+    //Mmakwena Sorry had to comment this because it was causing the pause and play button not to work 
+    //i dont know how and why 
+    //if (!heroSphere) return requestAnimationFrame(update); // safety check
+    //if (!isPaused) {
+    const deltaTime = clock.getDelta();
+      distance += rollingSpeed;
+      updateHero(deltaTime);
+    if(heroSphere){
+      
+
+      
       // Update hero rolling animation
-      heroSphere.rotation.x += heroRollingSpeed * deltaTime;
+      //heroSphere.rotation.x += heroRollingSpeed * deltaTime;
 
       // Smooth lane changing
       heroSphere.position.x = THREE.MathUtils.lerp(
@@ -172,6 +242,19 @@ export function startLevel2() {
         }
       } else {
         heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+      }
+      //slide animation when down key is pressed
+      if (slide_can === 0) {
+          heroSphere.position.y += velocity_y * deltaTime;
+          velocity_y -= 45 * deltaTime; 
+          
+
+          if (heroSphere.position.y <= heroBaseY) {
+              heroSphere.position.y = heroBaseY;
+              velocity_y = 0;
+              slide_can = 1; 
+              
+          }
       }
 
       // Move road segments
