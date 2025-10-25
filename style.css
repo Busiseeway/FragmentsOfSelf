@@ -43,3 +43,35 @@ canvas {
 #instructions div:not(:first-child) {
     margin-top: 4px;
 }
+
+/* Pause button styling */
+#pause-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 10px 15px;
+    background-color: white;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 1000;
+}
+#audio-btn{
+     background: #463e7d;
+    color: white;
+    border-radius: 20%;
+    border:1px solid rgb(97, 97, 158);
+    position: relative;
+    top:60px;
+}
+
+#pause-btn1{
+    background: #463e7d;
+    color: white;
+    border-radius: 20%;
+    border:1px solid rgb(97, 97, 158);
+    position: relative;
+    top:60px; 
+}
