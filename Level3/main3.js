@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createMenu3 } from './menu3.js';
 
 import { createScene, scene, camera, renderer } from '../scene.js';
 import { addLight } from './lights.js';
@@ -10,13 +11,13 @@ import { addSideWaterfalls, waterfalls } from '../waterfalls.js';
 import { addEmotions, emotions, emotionTypes } from '../emotions.js';
 import { addHearts, checkCollisions, removeHeart, gameOver, takeLanePenalty, resetHearts } from './healthBar.js';
 import { spawnLog, spawnBarricade, spawnHole, updateObstacles, clearObstacles, spawnRollingSphere } from './obstaclesL3.js';
-import { addSounds, sounds } from '../sounds.js';
+import { addSounds, sounds } from './sounds.js';
 
 let resetGame;
 
 export function startLevel3(){
 
-let rollingSpeed = 0.6;
+let rollingSpeed = 0.9;
 let heroRollingSpeed;
 let bounceValue = 0.02;
 let leftLane = -2;
@@ -32,10 +33,14 @@ let resumeButton;
 let sceneWidth = window.innerWidth;
 let sceneHeight = window.innerHeight;
 
+//theto menu
+let gameStarted = false;
+
 // Jump variables
 let jump_can = 1;
 let velocity_y = 0;
 let velocity_z = 0;
+let slide_can =1;
 
 // Obstacle spawning
 let lastObstacleTime = 0;
@@ -61,15 +66,28 @@ function init() {
     clock = new THREE.Clock();
 
     setupPauseControls();
+    //theto menu
+    createMenu3(startGame);
 
     window.addEventListener('resize', onWindowResize);
     document.addEventListener('keydown', handleKeyDown);
 
+    render();
+}
+
+
+
+function startGame() {
+    gameStarted = true;
+    clock.start();
+    lastObstacleTime = clock.getElapsedTime();
+    const spookyDance = sounds.find(s => s.name === 'spookyDance');
+    if (spookyDance) spookyDance.audio.play();
     update();
 }
 
 function setupPauseControls() {
-    pauseButton = document.getElementById('pause-btn');
+    pauseButton = document.getElementById('pause-btn1');
 
     if (pauseButton) {
         pauseButton.addEventListener('click', togglePause);
@@ -86,15 +104,15 @@ function togglePause() {
     isPaused = !isPaused;
 
     if (isPaused) {
-        pauseButton.textContent = 'Resume';
-        clock.stop();
-        console.log('Game Paused');
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
+      clock.stop();
+      console.log("Game Paused");
     } else {
-        pauseButton.textContent = 'Pause';
-        clock.start();
-        console.log('Game Resumed');
+      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;
+      clock.start();
+      console.log("Game Resumed");
     }
-}
+  }
 
 function handleKeyDown(keyEvent) {
     // Left arrow
@@ -118,12 +136,18 @@ function handleKeyDown(keyEvent) {
     }
 
     // Up arrow — jump
-    else if (keyEvent.keyCode === 38 && jump_can === 1) {
+    else if (keyEvent.keyCode === 38 && jump_can == 1) { // up arrow - jump
         jump_can = 0;
-        velocity_y = 16;
-        velocity_z = -1;
-
-        playJumpAnimation();
+        velocity_y = 15;
+        
+        playJumpAnimation('jump'); // Trigger jump animation
+    }
+    //down arrow - slide
+     else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
+        slide_can = 0;
+        velocity_y = 10;
+        
+        playJumpAnimation('slide'); // Trigger jump animation
     }
 
     // Spacebar — pause
@@ -192,6 +216,19 @@ function update() {
         } else {
             heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
         }
+         //slide animation when down key is pressed
+        if (slide_can === 0) {
+            heroSphere.position.y += velocity_y * deltaTime;
+            velocity_y -= 45 * deltaTime; 
+            
+
+            if (heroSphere.position.y <= heroBaseY) {
+                heroSphere.position.y = heroBaseY;
+                velocity_y = 0;
+                slide_can = 1; 
+                
+            }
+        } 
 
         // Move road segments
         roadSegments.forEach(segment => {
