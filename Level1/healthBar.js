@@ -107,11 +107,11 @@ function handleCollision(heroSphere, heroBaseY, scene) {
   heroSphere.position.y = heroBaseY;
 
   // Visual feedback - make hero flash
-  const originalColor = heroSphere.material.color.getHex();
-  heroSphere.material.color.setHex(0xff0000); // Flash red
-  setTimeout(() => {
-    heroSphere.material.color.setHex(originalColor);
-  }, 200);
+  // const originalColor = heroSphere.material.color.getHex();
+  // heroSphere.material.color.setHex(0xff0000); // Flash red
+  // setTimeout(() => {
+  //   heroSphere.material.color.setHex(originalColor);
+  // }, 200);
 
   //Game over
   if (getRemainingHearts() === 0) {

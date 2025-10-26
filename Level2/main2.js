@@ -28,6 +28,9 @@ import { addSideRailings, railings } from "./railings.js";
 //Mmakwena
 import { addSounds, sounds } from './sounds2.js';
 import { add } from "three/src/nodes/TSL.js";
+//Mukondi
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 export function startLevel2() {
   let gameStarted = false;
@@ -48,6 +51,8 @@ export function startLevel2() {
   let pauseButton;
   let resumeButton;
  
+  //Mukondi
+  let isFirstPerson = false;
 
   //theto
   let jump_can = 1;
@@ -200,6 +205,11 @@ function togglePause() {
         
         playJumpAnimation('slide'); // Trigger jump animation
     }
+    //Mukondi
+     // V - toggle camera
+    else if (keyEvent.key === "v" || keyEvent.key === "V") {
+      toggleCameraView();
+    }
     //Mmakwena
     // Spacebar — pause
     else if (keyEvent.keyCode === 32) {
@@ -208,6 +218,55 @@ function togglePause() {
         return;
     }
   }
+  //Mukondi
+    function toggleCameraView() {
+    isFirstPerson = !isFirstPerson;
+
+    if (isFirstPerson) {
+      // Switch to First-Person
+      OrbitControls.enabled = false;
+      PointerLockControls.enabled = true;
+      // Position camera relative to character
+      camera.position.copy(heroSphere.position);
+      camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
+      camera.position.x = heroSphere.position.x;
+      camera.poition.z=1;
+    } else {
+      // Switch to Third-Person
+      PointerLockControls.enabled = false;
+      OrbitControls.enabled = true;
+
+      // Reposition camera for third-person view
+      // (This might involve setting orbitControls target and camera position)
+      controls = new OrbitControls(camera, renderer.domElement);
+      //controls.target.set( 0, 0, 0 ); // Set the target to the origin
+      //OrbitControls.target.copy(heroSphere.position);
+      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(0, 4, 8);
+      camera.lookAt(0, 0, 0);// camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+     
+    }
+  }
+
+  function updateCamera() {
+    if (isFirstPerson) {
+      OrbitControls.enabled = false;
+      PointerLockControls.enabled = true;
+      // Position camera relative to character
+      camera.position.copy(heroSphere.position);
+      camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
+      camera.position.x = heroSphere.position.x;
+    } else {
+       const deltaTime = clock.getDelta();
+       console.log("update camera");
+      camera.position.z = THREE.MathUtils.lerp(
+        camera.position.z,
+        heroSphere.position.z + 8,
+        2 * deltaTime
+      );
+    }
+  }
+  
 
   function update() {
     if (isPaused) {
@@ -330,13 +389,13 @@ function togglePause() {
       updateEmotions(heroSphere, scene, rollingSpeed);
       checkCollisions(heroSphere, heroBaseY, scene);
       updateObstacles(scene, rollingSpeed, heroBaseY);
-
+      updateCamera();
       // Camera follow
-      camera.position.z = THREE.MathUtils.lerp(
-        camera.position.z,
-        heroSphere.position.z + 8,
-        2 * deltaTime
-      );
+      // camera.position.z = THREE.MathUtils.lerp(
+      //   camera.position.z,
+      //   heroSphere.position.z + 8,
+      //   2 * deltaTime
+      // );
 
       render();
       requestAnimationFrame(update);

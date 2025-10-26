@@ -7,17 +7,17 @@ export function addRollingLogs(scene) {
   //Disappear them when they are no longer on the road
 
   //add Texture
-  const texture = new THREE.TextureLoader().load(
-    "assets/textures/top-view-tree-bark.jpg"
-  );
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 4);
+  // const texture = new THREE.TextureLoader().load(
+  //   "assets/textures/top-view-tree-bark.jpg"
+  // );
+  // texture.wrapS = THREE.RepeatWrapping;
+  // texture.wrapT = THREE.RepeatWrapping;
+  // texture.repeat.set(4, 4);
 
   const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3, 20);
   const logMaterial = new THREE.MeshStandardMaterial({
     color: 0xffff00,
-    map: texture,
+    
   });
   const log = new THREE.Mesh(logGeometry, logMaterial);
   log.position.x = 5 + Math.random() * 10;
