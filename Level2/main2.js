@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { createMenu2 } from './menu2.js';
-
-import { addEmotions, updateEmotions } from "./emotions2.js";
+import { createMenu2, createLevel2CompleteMenu } from "./menu2.js";
+import { addEmotions, emotions, emotionTypes } from "./emotions2.js";
 import {
   spawnObstacle,
   spawnBarricade,
@@ -9,7 +8,12 @@ import {
   updateObstacles,
   clearObstacles,
 } from "./obstacles.js";
-import { addHearts, checkCollisions, resetHearts , takeLanePenalty} from "./healthBar.js";
+import {
+  addHearts,
+  checkCollisions,
+  resetHearts,
+  takeLanePenalty,
+} from "./healthBar.js";
 import { addRoad, roadSegments, waterSegments } from "./road.js";
 import { addSideTrees, treeGroups } from "./trees.js";
 import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
@@ -26,7 +30,7 @@ import { addLight, createLightning, flash } from "./lighting.js";
 import { addSideRailings, railings } from "./railings.js";
 
 //Mmakwena
-import { addSounds, sounds } from './sounds2.js';
+import { addSounds, sounds } from "./sounds2.js";
 import { add } from "three/src/nodes/TSL.js";
 
 export function startLevel2() {
@@ -43,11 +47,11 @@ export function startLevel2() {
   let clock;
   let distance = 0;
   let score = 0;
+  let levelEnded = false;
 
   //Mmakwena - pause and play
   let pauseButton;
   let resumeButton;
- 
 
   //theto
   let jump_can = 1;
@@ -55,11 +59,10 @@ export function startLevel2() {
   let isPaused = false;
 
   //Mmakwena
-  let slide_can=1;
+  let slide_can = 1;
   // ----- DENSE RAIN VARIABLES -----
   let rain, rainGeo, rainVelocities;
   const rainCount = 5000; // heavy rain
-  
 
   function initRain() {
     rainGeo = new THREE.BufferGeometry();
@@ -67,20 +70,23 @@ export function startLevel2() {
     rainVelocities = new Float32Array(rainCount);
 
     for (let i = 0; i < rainCount; i++) {
-      rainPositions[i * 3] = Math.random() * 40 - 20;      // x: narrower range around road
-      rainPositions[i * 3 + 1] = Math.random() * 100;      // y: 0 to 100
+      rainPositions[i * 3] = Math.random() * 40 - 20; // x: narrower range around road
+      rainPositions[i * 3 + 1] = Math.random() * 100; // y: 0 to 100
       rainPositions[i * 3 + 2] = Math.random() * 100 - 60; // z: -60 to 40 (in front of camera)
 
       rainVelocities[i] = 0.5 + Math.random() * 0.5;
     }
 
-    rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPositions, 3));
+    rainGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(rainPositions, 3)
+    );
 
     const rainMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.1,              
+      size: 0.1,
       transparent: true,
-      opacity: 0.7,           
+      opacity: 0.7,
     });
 
     rain = new THREE.Points(rainGeo, rainMaterial);
@@ -119,8 +125,8 @@ export function startLevel2() {
     //theto menu2
     createMenu2(startGame);
 
-    //Mmakwena pause controls 
-    setupPauseControls()
+    //Mmakwena pause controls
+    setupPauseControls();
     addSounds(scene, camera);
 
     window.addEventListener("resize", onWindowResize, false);
@@ -136,6 +142,18 @@ export function startLevel2() {
     update();
   }
 
+  function endLevel() {
+    if (levelEnded) return;
+
+    levelEnded = true;
+    clock.stop();
+    console.log("Level Complete! Final Score: " + score);
+
+    setTimeout(() => {
+      createLevel2CompleteMenu();
+    }, 500);
+  }
+
   //Mmakwena Commented
   //using same buttons in all levels
   // function togglePause() {
@@ -143,28 +161,30 @@ export function startLevel2() {
   //   console.log(isPaused ? "Game Paused" : "Game Resumed");
   // }
   function setupPauseControls() {
-    pauseButton = document.getElementById('pause-btn1');
+    pauseButton = document.getElementById("pause-btn1");
 
     if (pauseButton) {
-        pauseButton.addEventListener('click', togglePause);
+      pauseButton.addEventListener("click", togglePause);
     } else {
-        console.error('Pause button not found!');
+      console.error("Pause button not found!");
     }
 
     if (resumeButton) {
-        resumeButton.addEventListener('click', togglePause);
+      resumeButton.addEventListener("click", togglePause);
     }
-}
+  }
 
-function togglePause() {
+  function togglePause() {
     isPaused = !isPaused;
 
     if (isPaused) {
-      pauseButton.innerHTML = '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>' ;
+      pauseButton.innerHTML =
+        '<img src="./assets/icons/icons8-play-94.png" width="50" height="50"/>';
       clock.stop();
       console.log("Game Paused");
     } else {
-      pauseButton.innerHTML = '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>' ;
+      pauseButton.innerHTML =
+        '<img src="./assets/icons/icons8-pause-64.png" width="50" height="50"/>';
       clock.start();
       console.log("Game Resumed");
     }
@@ -175,58 +195,58 @@ function togglePause() {
       // left
       if (currentLane > leftLane) {
         currentLane -= 2;
-      }
-      else {
-            // Already at leftmost lane
-            takeLanePenalty(heroSphere, -1);
+      } else {
+        // Already at leftmost lane
+        takeLanePenalty(heroSphere, -1);
       }
     } else if (keyEvent.keyCode === 39) {
       // right
       if (currentLane < rightLane) {
         currentLane += 2;
-      }else {
-            // Already at rightmost lane
-            takeLanePenalty(heroSphere, 1);
-        }
+      } else {
+        // Already at rightmost lane
+        takeLanePenalty(heroSphere, 1);
+      }
     } else if (keyEvent.keyCode === 38 && jump_can == 1) {
       // up
       jump_can = 0;
       velocity_y = 15;
-      playJumpAnimation('jump'); // Trigger jump animation
-    }
-    else if (keyEvent.keyCode === 40 && slide_can == 1) { // up arrow - jump
-        slide_can = 0;
-        velocity_y = 10;
-        
-        playJumpAnimation('slide'); // Trigger jump animation
+      playJumpAnimation("jump"); // Trigger jump animation
+    } else if (keyEvent.keyCode === 40 && slide_can == 1) {
+      // up arrow - jump
+      slide_can = 0;
+      velocity_y = 10;
+
+      playJumpAnimation("slide"); // Trigger jump animation
     }
     //Mmakwena
     // Spacebar — pause
     else if (keyEvent.keyCode === 32) {
-        keyEvent.preventDefault();
-        togglePause();
-        return;
+      keyEvent.preventDefault();
+      togglePause();
+      return;
     }
   }
 
   function update() {
-    if (isPaused) {
-        render();
-        requestAnimationFrame(update);
-        return;
+    if (levelEnded) {
+      return;
     }
 
-    //Mmakwena Sorry had to comment this because it was causing the pause and play button not to work 
-    //i dont know how and why 
+    if (isPaused) {
+      render();
+      requestAnimationFrame(update);
+      return;
+    }
+
+    //Mmakwena Sorry had to comment this because it was causing the pause and play button not to work
+    //i dont know how and why
     //if (!heroSphere) return requestAnimationFrame(update); // safety check
     //if (!isPaused) {
     const deltaTime = clock.getDelta();
-      distance += rollingSpeed;
-      updateHero(deltaTime);
-    if(heroSphere){
-      
-
-      
+    distance += rollingSpeed;
+    updateHero(deltaTime);
+    if (heroSphere) {
       // Update hero rolling animation
       //heroSphere.rotation.x += heroRollingSpeed * deltaTime;
 
@@ -248,20 +268,19 @@ function togglePause() {
           jump_can = 1;
         }
       } else {
-        heroSphere.position.y = heroBaseY + Math.sin(distance * 10) * bounceValue;
+        heroSphere.position.y =
+          heroBaseY + Math.sin(distance * 10) * bounceValue;
       }
       //slide animation when down key is pressed
       if (slide_can === 0) {
-          heroSphere.position.y += velocity_y * deltaTime;
-          velocity_y -= 45 * deltaTime; 
-          
+        heroSphere.position.y += velocity_y * deltaTime;
+        velocity_y -= 45 * deltaTime;
 
-          if (heroSphere.position.y <= heroBaseY) {
-              heroSphere.position.y = heroBaseY;
-              velocity_y = 0;
-              slide_can = 1; 
-              
-          }
+        if (heroSphere.position.y <= heroBaseY) {
+          heroSphere.position.y = heroBaseY;
+          velocity_y = 0;
+          slide_can = 1;
+        }
       }
 
       // Move road segments
@@ -297,23 +316,23 @@ function togglePause() {
       });
 
       // ----- DENSE RAIN UPDATE -----
-    if (rain && rainGeo) {
-      const positions = rainGeo.attributes.position.array;
+      if (rain && rainGeo) {
+        const positions = rainGeo.attributes.position.array;
 
-      for (let i = 0; i < rainCount; i++) {
-        const idx = i * 3 + 1; // y coordinate
-        positions[idx] -= rainVelocities[i] * 2; // falling speed
+        for (let i = 0; i < rainCount; i++) {
+          const idx = i * 3 + 1; // y coordinate
+          positions[idx] -= rainVelocities[i] * 2; // falling speed
 
-        // reset drop when below ground
-        if (positions[idx] < 0) {
-          positions[i * 3] = Math.random() * 40 - 20;      // x reset
-          positions[idx] = Math.random() * 100;            // y reset
-          positions[i * 3 + 2] = Math.random() * 100 - 60; // z reset
+          // reset drop when below ground
+          if (positions[idx] < 0) {
+            positions[i * 3] = Math.random() * 40 - 20; // x reset
+            positions[idx] = Math.random() * 100; // y reset
+            positions[i * 3 + 2] = Math.random() * 100 - 60; // z reset
+          }
         }
-      }
 
-      rainGeo.attributes.position.needsUpdate = true;
-    }
+        rainGeo.attributes.position.needsUpdate = true;
+      }
       // Spawn obstacles occasionally
       if (Math.random() < 0.01) {
         const choice = Math.random();
@@ -327,8 +346,60 @@ function togglePause() {
       }
 
       // Update emotions and obstacles
-      updateEmotions(heroSphere, scene, rollingSpeed);
+      emotions.forEach((emotion) => {
+        if (!emotion.userData.collected) {
+          emotion.position.z += rollingSpeed;
+
+          const dx = heroSphere.position.x - emotion.position.x;
+          const dy = heroSphere.position.y - emotion.position.y;
+          const dz = heroSphere.position.z - emotion.position.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+          if (dist < 1) {
+            score = Math.max(0, score + emotion.userData.score);
+            document.getElementById("score").textContent = "Score: " + score;
+            console.log(
+              "Collected " + emotion.userData.type + "! Score: " + score
+            );
+
+            if (score >= 750 && !levelEnded) {
+              endLevel();
+              return;
+            }
+
+            // Play sound if available
+            if (sounds.collect) sounds.collect.play();
+
+            const lanes = [-2, 0, 2];
+            emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+            emotion.position.z = -200 - Math.random() * 200;
+            emotion.userData.collected = false;
+
+            const newType =
+              emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+            emotion.material.color.set(newType.color);
+            emotion.userData.type = newType.name;
+          }
+
+          if (emotion.position.z > 10) {
+            const lanes = [-2, 0, 2];
+            emotion.position.x = lanes[Math.floor(Math.random() * 3)];
+            emotion.position.z = -200 - Math.random() * 200;
+            emotion.userData.collected = false;
+
+            const newType =
+              emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
+            emotion.material.color.set(newType.color);
+            emotion.userData.type = newType.name;
+
+            scene.add(emotion);
+          }
+        }
+      });
+
+      // Check health bar collisions
       checkCollisions(heroSphere, heroBaseY, scene);
+
       updateObstacles(scene, rollingSpeed, heroBaseY);
 
       // Camera follow
@@ -349,7 +420,7 @@ function togglePause() {
 
   function resetGame() {
     clearObstacles(scene); // Use the existing obstacle clearing function
-    resetHearts();         // Reset health bar
+    resetHearts(); // Reset health bar
 
     currentLane = middleLane;
     heroSphere.position.set(currentLane, heroBaseY, 0);

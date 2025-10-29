@@ -1,7 +1,7 @@
-import { getObstacles, checkObstacleCollision } from './obstaclesL3.js';
+import { getObstacles, checkObstacleCollision } from "./obstacles.js";
 
 let hearts = [];
-const heartTypes = [{ symbol: '❤️', name: "Full" }];
+const heartTypes = [{ symbol: "❤️", name: "Full" }];
 
 // Short invulnerability after getting hit
 let canTakeDamage = true;
@@ -9,28 +9,34 @@ const damageCooldown = 1000;
 let lastCollisionTime = 0;
 
 export function addHearts(count = 5) {
-  const heartsContainer = document.createElement('div');
-  heartsContainer.id = 'hearts-container';
-  heartsContainer.style.position = 'absolute';
-  heartsContainer.style.top = '20px';
-  heartsContainer.style.right = '20px';
-  heartsContainer.style.display = 'flex';
-  heartsContainer.style.gap = '10px';
-  heartsContainer.style.zIndex = '1000';
+  const heartsContainer = document.createElement("div");
+  heartsContainer.id = "hearts-container";
+  heartsContainer.style.position = "absolute";
+  heartsContainer.style.top = "20px";
+  heartsContainer.style.right = "20px";
+  heartsContainer.style.display = "flex";
+  heartsContainer.style.gap = "10px";
+  heartsContainer.style.zIndex = "1000";
 
   for (let i = 0; i < count; i++) {
     const type = heartTypes[0];
-    const heart = document.createElement('div');
-    heart.className = 'heart';
+    const heart = document.createElement("div");
+    heart.className = "heart";
     heart.innerHTML = type.symbol;
-    heart.style.fontSize = '32px';
-    heart.style.filter = 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))';
-    heart.style.transition = 'transform 0.2s, opacity 0.5s';
-    heart.style.cursor = 'pointer';
+    heart.style.fontSize = "32px";
+    heart.style.filter = "drop-shadow(2px 2px 4px rgba(0,0,0,0.3))";
+    heart.style.transition = "transform 0.2s, opacity 0.5s";
+    heart.style.cursor = "pointer";
 
     // Hover effect
-    heart.addEventListener('mouseenter', () => (heart.style.transform = 'scale(1.2)'));
-    heart.addEventListener('mouseleave', () => (heart.style.transform = 'scale(1)'));
+    heart.addEventListener(
+      "mouseenter",
+      () => (heart.style.transform = "scale(1.2)")
+    );
+    heart.addEventListener(
+      "mouseleave",
+      () => (heart.style.transform = "scale(1)")
+    );
 
     heartsContainer.appendChild(heart);
     hearts.push(heart);
@@ -42,7 +48,9 @@ export function addHearts(count = 5) {
 // Utility: safely flash red for Mesh or GLTF model
 function flashHeroRed(heroSphere) {
   // For Meshes and GLTFs alike
-  heroSphere.traverse ? heroSphere.traverse(applyFlash) : applyFlash(heroSphere);
+  heroSphere.traverse
+    ? heroSphere.traverse(applyFlash)
+    : applyFlash(heroSphere);
 
   function applyFlash(node) {
     if (node.isMesh && node.material && node.material.color) {
@@ -141,8 +149,8 @@ export function takeLanePenalty(heroSphere, direction) {
 export function removeHeart() {
   if (hearts.length > 0) {
     const heart = hearts.pop();
-    heart.style.opacity = '0';
-    heart.style.transform = 'scale(1.5) rotate(20deg)';
+    heart.style.opacity = "0";
+    heart.style.transform = "scale(1.5) rotate(20deg)";
     setTimeout(() => heart.remove(), 500);
   }
 }
@@ -152,54 +160,60 @@ export function getRemainingHearts() {
 }
 
 export function resetHearts() {
-  hearts.forEach(h => h.remove());
+  hearts.forEach((h) => h.remove());
   hearts = [];
-  const container = document.getElementById('hearts-container');
+  const container = document.getElementById("hearts-container");
   if (container) container.remove();
   addHearts(5);
 }
 
 export function gameOver() {
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-  overlay.style.display = 'flex';
-  overlay.style.flexDirection = 'column';
-  overlay.style.justifyContent = 'center';
-  overlay.style.alignItems = 'center';
-  overlay.style.zIndex = '10000';
-  overlay.style.color = 'white';
-  overlay.style.fontFamily = 'Arial, sans-serif';
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.zIndex = "10000";
+  overlay.style.color = "white";
+  overlay.style.fontFamily = "Arial, sans-serif";
 
-  const gameOverText = document.createElement('h1');
-  gameOverText.textContent = 'Game Over!';
-  gameOverText.style.fontSize = '64px';
-  gameOverText.style.marginBottom = '20px';
-  gameOverText.style.textShadow = '4px 4px 8px rgba(0,0,0,0.8)';
+  const gameOverText = document.createElement("h1");
+  gameOverText.textContent = "Game Over!";
+  gameOverText.style.fontSize = "64px";
+  gameOverText.style.marginBottom = "20px";
+  gameOverText.style.textShadow = "4px 4px 8px rgba(0,0,0,0.8)";
 
-  const scoreText = document.createElement('p');
-  const scoreElement = document.getElementById('score');
-  scoreText.textContent = scoreElement ? scoreElement.textContent : 'Score: 0';
-  scoreText.style.fontSize = '32px';
-  scoreText.style.marginBottom = '30px';
+  const scoreText = document.createElement("p");
+  const scoreElement = document.getElementById("score");
+  scoreText.textContent = scoreElement ? scoreElement.textContent : "Score: 0";
+  scoreText.style.fontSize = "32px";
+  scoreText.style.marginBottom = "30px";
 
-  const restartButton = document.createElement('button');
-  restartButton.textContent = 'Restart';
-  restartButton.style.fontSize = '24px';
-  restartButton.style.padding = '15px 40px';
-  restartButton.style.backgroundColor = '#ff4444';
-  restartButton.style.color = 'white';
-  restartButton.style.border = 'none';
-  restartButton.style.borderRadius = '10px';
-  restartButton.style.cursor = 'pointer';
-  restartButton.style.transition = 'background-color 0.3s';
-  restartButton.addEventListener('mouseenter', () => (restartButton.style.backgroundColor = '#ff6666'));
-  restartButton.addEventListener('mouseleave', () => (restartButton.style.backgroundColor = '#ff4444'));
-  restartButton.addEventListener('click', () => window.location.reload());
+  const restartButton = document.createElement("button");
+  restartButton.textContent = "Restart";
+  restartButton.style.fontSize = "24px";
+  restartButton.style.padding = "15px 40px";
+  restartButton.style.backgroundColor = "#ff4444";
+  restartButton.style.color = "white";
+  restartButton.style.border = "none";
+  restartButton.style.borderRadius = "10px";
+  restartButton.style.cursor = "pointer";
+  restartButton.style.transition = "background-color 0.3s";
+  restartButton.addEventListener(
+    "mouseenter",
+    () => (restartButton.style.backgroundColor = "#ff6666")
+  );
+  restartButton.addEventListener(
+    "mouseleave",
+    () => (restartButton.style.backgroundColor = "#ff4444")
+  );
+  restartButton.addEventListener("click", () => window.location.reload());
 
   overlay.appendChild(gameOverText);
   overlay.appendChild(scoreText);
