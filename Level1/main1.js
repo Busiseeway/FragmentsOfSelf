@@ -283,10 +283,13 @@ export function startLevel1() {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
       // Position camera relative to character
+     // heroSphere.add(camera);
+      //camera.position.set(0, 1.8, 0);
       camera.position.copy(heroSphere.position);
-      camera.position.y += heroBaseY / 2; // Adjust for eye level
+      camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.rotation.copy(heroSphere.rotation); // Align camera with character's forward
+      camera.position.z=1;
+     // console.log(camera.position);
     } else {
       // Switch to Third-Person
       PointerLockControls.enabled = false;
@@ -295,9 +298,7 @@ export function startLevel1() {
       // Reposition camera for third-person view
       // (This might involve setting orbitControls target and camera position)
       controls = new OrbitControls(camera, renderer.domElement);
-      //controls.target.set( 0, 0, 0 ); // Set the target to the origin
-      //OrbitControls.target.copy(heroSphere.position);
-      // camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
       camera.position.set(0, 4, 8);
       camera.lookAt(0, 0, 0);
     }
@@ -307,13 +308,13 @@ export function startLevel1() {
     if (isFirstPerson) {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
-      // Position camera relative to character
       camera.position.copy(heroSphere.position);
-      camera.position.y += heroBaseY / 2; // Adjust for eye level
+      camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.rotation.copy(heroSphere.rotation);
+     //camera.rotation.y=(Math.PI);
     } else {
       const deltaTime = clock.getDelta();
+      console.log("update camera");
       camera.position.z = THREE.MathUtils.lerp(
         camera.position.z,
         heroSphere.position.z + 8,

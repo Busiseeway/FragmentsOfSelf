@@ -33,6 +33,11 @@ import {
 } from "./obstacles.js";
 import { addSounds, sounds } from "./sounds.js";
 
+//Mukondi
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+
 let resetGame;
 
 export function startLevel3() {
@@ -54,7 +59,9 @@ export function startLevel3() {
 
   //theto menu
   let gameStarted = false;
-
+//Mukondi
+  let isFirstPerson = false;
+  let controls;
   // Jump variables
   let jump_can = 1;
   let velocity_y = 0;
@@ -183,6 +190,11 @@ export function startLevel3() {
 
       playJumpAnimation("slide"); // Trigger jump animation
     }
+     //Mukondi
+     // V - toggle camera
+    else if (keyEvent.key === "v" || keyEvent.key === "V") {
+      toggleCameraView();
+    }
 
     // Spacebar — pause
     else if (keyEvent.keyCode === 32) {
@@ -191,7 +203,54 @@ export function startLevel3() {
       return;
     }
   }
+  function toggleCameraView() {
+    isFirstPerson = !isFirstPerson;
 
+    if (isFirstPerson) {
+      // Switch to First-Person
+      OrbitControls.enabled = false;
+      PointerLockControls.enabled = true;
+      // Position camera relative to character
+     // heroSphere.add(camera);
+      //camera.position.set(0, 1.8, 0);
+      camera.position.copy(heroSphere.position);
+      camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
+      camera.position.x = heroSphere.position.x;
+      camera.position.z=1;
+     // console.log(camera.position);
+    } else {
+      // Switch to Third-Person
+      PointerLockControls.enabled = false;
+      OrbitControls.enabled = true;
+
+      // Reposition camera for third-person view
+      // (This might involve setting orbitControls target and camera position)
+      controls = new OrbitControls(camera, renderer.domElement);
+      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(0, 4, 8);
+      camera.lookAt(0, 0, 0);
+    }
+  }
+
+ function updateCamera() {
+      if (isFirstPerson) {
+        OrbitControls.enabled = false;
+        PointerLockControls.enabled = true;
+        // Position camera relative to character
+        camera.position.copy(heroSphere.position);
+        camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
+        camera.position.x = heroSphere.position.x;
+      } else {
+        
+        PointerLockControls.enabled = false;
+        OrbitControls.enabled = true;
+        controls = new OrbitControls(camera, renderer.domElement);
+        camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+        camera.position.set(0, 4, 8);
+        camera.lookAt(0, 0, 0);
+          
+      }
+    }
   function update() {
     if (levelEnded) {
       return;
@@ -326,11 +385,12 @@ export function startLevel3() {
       });
 
       // Camera follow
-      camera.position.z = THREE.MathUtils.lerp(
-        camera.position.z,
-        heroSphere.position.z + 8,
-        2 * deltaTime
-      );
+      // camera.position.z = THREE.MathUtils.lerp(
+      //   camera.position.z,
+      //   heroSphere.position.z + 8,
+      //   2 * deltaTime
+      // );
+      updateCamera();
 
       // Emotions (collectibles)
       emotions.forEach((emotion) => {
