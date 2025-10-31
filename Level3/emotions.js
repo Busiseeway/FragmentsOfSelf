@@ -24,7 +24,9 @@ export function addEmotions(scene) {
     const geometry = new THREE.CircleGeometry(0.5, 32, 32);
     const material = new THREE.MeshLambertMaterial({ 
       map: type.texture, 
-      transparent: true 
+      transparent: true,
+      depthTest: true,
+      depthWrite: true
     });
     const emotion = new THREE.Mesh(geometry, material);
 

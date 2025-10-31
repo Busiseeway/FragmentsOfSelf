@@ -18,25 +18,22 @@ import { addEmotions, emotions, emotionTypes } from "./emotions.js";
 import {
   addHearts,
   checkCollisions,
-  removeHeart,
-  gameOver,
   takeLanePenalty,
   resetHearts,
 } from "./healthBar.js";
 import {
-  spawnLog,
   spawnBarricade,
-  spawnHole,
   updateObstacles,
   clearObstacles,
-  spawnRollingSphere,
+   animateSmoke,
+   spawnRandomObstacle
 } from "./obstacles.js";
 import { addSounds, sounds } from "./sounds.js";
 
 let resetGame;
 
 export function startLevel3() {
-  let rollingSpeed = 0.9;
+  let rollingSpeed = 0.6;
   let heroRollingSpeed;
   let bounceValue = 0.02;
   let leftLane = -2;
@@ -49,8 +46,6 @@ export function startLevel3() {
   let isPaused = false;
   let pauseButton;
   let resumeButton;
-  let sceneWidth = window.innerWidth;
-  let sceneHeight = window.innerHeight;
 
   //theto menu
   let gameStarted = false;
@@ -211,30 +206,16 @@ export function startLevel3() {
     if (heroSphere) {
       const elapsed = clock.getElapsedTime();
 
-      // Spawn obstacles periodically
+        // Spawn obstacles periodically
       if (elapsed - lastObstacleTime > obstacleInterval) {
-        const obstacleType = Math.floor(Math.random() * 6);
-
-        switch (obstacleType) {
-          case 0:
-            spawnLog(scene, heroSphere, leftLane, middleLane, rightLane);
-            break;
-          case 1:
-            spawnBarricade(scene, heroBaseY, leftLane, rightLane);
-            break;
-          case 2:
-            spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane);
-            break;
-          case 3:
-            spawnRollingSphere(scene, leftLane, middleLane, rightLane);
-            break;
-        }
-
+        spawnRandomObstacle(scene, heroSphere, heroBaseY, leftLane, middleLane, rightLane);
         lastObstacleTime = elapsed;
       }
 
       // Update all obstacles
       updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere);
+
+      animateSmoke();
 
       // Smooth lane changing
       heroSphere.position.x = THREE.MathUtils.lerp(
@@ -393,6 +374,7 @@ export function startLevel3() {
   }
 
   function render() {
+    renderer.sortObjects = true; 
     renderer.render(scene, camera);
   }
 
