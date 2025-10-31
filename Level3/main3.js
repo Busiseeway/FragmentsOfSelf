@@ -40,6 +40,7 @@ let sceneHeight = window.innerHeight;
 let gameStarted = false;
 //Mukondi
   let isFirstPerson = false;
+  let controls;
 
 // Jump variables
 let jump_can = 1;
@@ -180,7 +181,7 @@ function handleKeyDown(keyEvent) {
       camera.position.copy(heroSphere.position);
       camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.poition.z=1;
+      camera.position.z=1;
      // console.log(camera.position);
     } else {
       // Switch to Third-Person
@@ -196,24 +197,27 @@ function handleKeyDown(keyEvent) {
     }
   }
 
-  function updateCamera() {
-    if (isFirstPerson) {
-      OrbitControls.enabled = false;
-      PointerLockControls.enabled = true;
-      camera.position.copy(heroSphere.position);
-      camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
-      camera.position.x = heroSphere.position.x;
-     //camera.rotation.y=(Math.PI);
-    } else {
-      const deltaTime = clock.getDelta();
-      console.log("update camera");
-      camera.position.z = THREE.MathUtils.lerp(
-        camera.position.z,
-        heroSphere.position.z + 8,
-        2 * deltaTime
-      );
+  
+   function updateCamera() {
+      if (isFirstPerson) {
+        OrbitControls.enabled = false;
+        PointerLockControls.enabled = true;
+        // Position camera relative to character
+        camera.position.copy(heroSphere.position);
+        camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
+        camera.position.x = heroSphere.position.x;
+      } else {
+        
+        PointerLockControls.enabled = false;
+        OrbitControls.enabled = true;
+        controls = new OrbitControls(camera, renderer.domElement);
+        camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+        camera.position.set(0, 4, 8);
+        camera.lookAt(0, 0, 0);
+          
+      }
     }
-  }
+  
 
 function update() {
 

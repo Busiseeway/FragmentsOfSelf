@@ -53,6 +53,7 @@ export function startLevel2() {
  
   //Mukondi
   let isFirstPerson = false;
+  let controls;
 
   //theto
   let jump_can = 1;
@@ -92,13 +93,7 @@ export function startLevel2() {
     scene.add(rain);
   }
 
-  function onWindowResize() {
-    const sceneHeight = window.innerHeight;
-    const sceneWidth = window.innerWidth;
-    renderer.setSize(sceneWidth, sceneHeight);
-    camera.aspect = sceneWidth / sceneHeight;
-    camera.updateProjectionMatrix();
-  }
+
 
   init();
 
@@ -230,7 +225,7 @@ function togglePause() {
       camera.position.copy(heroSphere.position);
       camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.poition.z=1;
+      camera.position.z=1;
     } else {
       // Switch to Third-Person
       PointerLockControls.enabled = false;
@@ -239,8 +234,7 @@ function togglePause() {
       // Reposition camera for third-person view
       // (This might involve setting orbitControls target and camera position)
       controls = new OrbitControls(camera, renderer.domElement);
-      //controls.target.set( 0, 0, 0 ); // Set the target to the origin
-      //OrbitControls.target.copy(heroSphere.position);
+    
       camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
       camera.position.set(0, 4, 8);
       camera.lookAt(0, 0, 0);// camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
@@ -257,16 +251,23 @@ function togglePause() {
       camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
     } else {
-       const deltaTime = clock.getDelta();
-       console.log("update camera");
-      camera.position.z = THREE.MathUtils.lerp(
-        camera.position.z,
-        heroSphere.position.z + 8,
-        2 * deltaTime
-      );
+      
+      PointerLockControls.enabled = false;
+      OrbitControls.enabled = true;
+      controls = new OrbitControls(camera, renderer.domElement);
+      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(0, 4, 8);
+      camera.lookAt(0, 0, 0);
+        
     }
   }
-  
+    function onWindowResize() {
+    const sceneHeight = window.innerHeight;
+    const sceneWidth = window.innerWidth;
+    renderer.setSize(sceneWidth, sceneHeight);
+    camera.aspect = sceneWidth / sceneHeight;
+    camera.updateProjectionMatrix();
+  }
 
   function update() {
     if (isPaused) {
@@ -386,10 +387,11 @@ function togglePause() {
       }
 
       // Update emotions and obstacles
+      updateCamera();
       updateEmotions(heroSphere, scene, rollingSpeed);
       checkCollisions(heroSphere, heroBaseY, scene);
       updateObstacles(scene, rollingSpeed, heroBaseY);
-      updateCamera();
+      
       // Camera follow
       // camera.position.z = THREE.MathUtils.lerp(
       //   camera.position.z,
