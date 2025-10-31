@@ -15,7 +15,7 @@ export function createScene(container = document.body) {
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setClearColor(0x87CEEB, 1);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMapz;
     renderer.setSize(sceneWidth, sceneHeight);
 
     //document.body.appendChild(renderer.domElement);
