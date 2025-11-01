@@ -72,7 +72,7 @@ export function checkObsCollisions(heroSphere) {
     let collisionThreshold = 1;
     if (obs.name === "log") {
       // Logs are cylinders, need larger threshold
-      collisionThreshold = 2;
+      collisionThreshold = 1.5;
     } else if (obs.name === "boulder") {
       collisionThreshold = 1.2;
     }

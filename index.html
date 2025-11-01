@@ -11,14 +11,17 @@
       src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
     ></script>
 
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.149/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.149/examples/jsm/"
-        }
-      }
-    </script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./node_modules/three/build/three.module.js",
+      "three/": "./node_modules/three/",
+      "three/examples/jsm/": "./node_modules/three/examples/jsm/",
+      "three/addons/": "./node_modules/three/examples/jsm/"
+
+    }
+  }
+  </script>
     <!-- <script type="module" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
     <div id="score" style="position:fixed;top:10px;left:10px;color:white;font-size:20px;font-family:sans-serif;">Score: 0</div>
     <!--<script src='https://cdn.jsdelivr.net/gh/mrdoob/Three.js@r92/examples/js/loaders/GLTFLoader.js'></script>-->

@@ -492,4 +492,15 @@ updateCamera();
     score = 0;
     lastObstacleTime = clock.getElapsedTime();
   }
+
+    function endLevel() {
+        if (levelEnded) return;
+        levelEnded = true;
+        clock.stop();
+        console.log("Level 2 Complete! Final Score: " + score);
+
+        setTimeout(() => {
+            if (onLevelComplete) onLevelComplete();
+        }, 500);
+    }
 }

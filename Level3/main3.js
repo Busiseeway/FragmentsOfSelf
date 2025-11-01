@@ -458,6 +458,17 @@ export function startLevel3() {
       lastObstacleTime = clock.getElapsedTime();
     };
   }
+
+      function endLevel() {
+        if (levelEnded) return;
+        levelEnded = true;
+        clock.stop();
+        console.log("Level 3 Complete! Final Score: " + score);
+
+        setTimeout(() => {
+            if (onLevelComplete) onLevelComplete();
+        }, 500);
+    }
 }
 
 export { resetGame };
