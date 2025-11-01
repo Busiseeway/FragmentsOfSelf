@@ -519,4 +519,16 @@ export function startLevel1() {
     // Reset clock
     lastObstacleTime = clock.getElapsedTime();
   }
+
+      function endLevel() {
+        if (levelEnded) return;
+        levelEnded = true;
+        clock.stop();
+        console.log("Level 1 Complete! Final Score: " + score);
+
+        setTimeout(() => {
+            // Instead of creating menu here, call the callback
+            if (onLevelComplete) onLevelComplete();
+        }, 500);
+    }
 }
