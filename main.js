@@ -12,6 +12,10 @@ if (path === '/level3') {
     import('./Level1/main1.js').then(level1 => {
         level1.startLevel1();
     }).catch(err => console.error("Failed to load level:", err));
+} else if (path === '/ending') {
+    import('./ending.js').then(ending => {
+        ending.startEndingScene();
+    }).catch(err => console.error("Failed to load ending scene:", err));
 }
 else if (path === '/' || path === '/index.html') {
   import('./mainmenu.js')
