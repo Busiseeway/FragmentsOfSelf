@@ -106,12 +106,25 @@ function handleCollision(heroSphere, heroBaseY, scene) {
   // Reset hero Y position to ground
   heroSphere.position.y = heroBaseY;
 
-  // Visual feedback - make hero flash
-  const originalColor = heroSphere.material.color.getHex();
-  heroSphere.material.color.setHex(0xff0000); // Flash red
-  setTimeout(() => {
-    heroSphere.material.color.setHex(originalColor);
-  }, 200);
+  // Visual feedback - make hero flash (with safety check)
+  if (heroSphere.material && heroSphere.material.color) {
+    const originalColor = heroSphere.material.color.getHex();
+    heroSphere.material.color.setHex(0xff0000); // Flash red
+    setTimeout(() => {
+      heroSphere.material.color.setHex(originalColor);
+    }, 200);
+  } else if (heroSphere.traverse) {
+    // If heroSphere is a group/container, try to find materials in children
+    heroSphere.traverse((child) => {
+      if (child.material && child.material.color) {
+        const originalColor = child.material.color.getHex();
+        child.material.color.setHex(0xff0000);
+        setTimeout(() => {
+          child.material.color.setHex(originalColor);
+        }, 200);
+      }
+    });
+  }
 
   //Game over
   if (getRemainingHearts() === 0) {

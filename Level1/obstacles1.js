@@ -67,8 +67,17 @@ export function checkObsCollisions(heroSphere) {
     const dy = heroSphere.position.y - obs.position.y;
     const dz = heroSphere.position.z - obs.position.z;
     const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    //console.log(distance);
-    if (distance <= 1) {
+    
+    // Different collision thresholds for different obstacle types
+    let collisionThreshold = 1;
+    if (obs.name === "log") {
+      // Logs are cylinders, need larger threshold
+      collisionThreshold = 2;
+    } else if (obs.name === "boulder") {
+      collisionThreshold = 1.2;
+    }
+    
+    if (distance <= collisionThreshold) {
       return true;
     }
   }

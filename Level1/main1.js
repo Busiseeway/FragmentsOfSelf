@@ -39,7 +39,7 @@ import {
 export function startLevel1() {
   //let road, heroSphere;
   let road;
-  let rollingSpeed = 0.2;
+  let rollingSpeed = 0.35;
   let heroRollingSpeed;
   let heroRadius = 0.3;
   //let heroBaseY = 0.5;
