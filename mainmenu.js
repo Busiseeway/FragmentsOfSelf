@@ -1,11 +1,23 @@
 // mainmenu.js
 import * as THREE from 'three';
+import {
+  addMainHero,
+  mainHero,
+  heroBaseY,
+  updateHero,
+} from "./mainhero.js";
+import { createScene, scene, camera, renderer } from "./mainscene.js";
+
 
 export function createMenu3(onStartCallback) {
+  let rollingSpeed = 0.6;
+   let clock;
+    let distance = 0;
   // Play menu music
   const listener = new THREE.AudioListener();
-  const camera = new THREE.PerspectiveCamera();
-  camera.add(listener);
+  const camera2 = new THREE.PerspectiveCamera();
+  camera2.add(listener);
+  
 
   const menuMusic = new THREE.Audio(listener);
   const audioLoader = new THREE.AudioLoader();
@@ -73,6 +85,43 @@ export function createMenu3(onStartCallback) {
       text-align: center;
       z-index: 2;
   `;
+
+  //Monster
+   const monster =document.createElement('div');
+  
+  init();
+ 
+
+  function init(){
+    createScene();
+    monster.appendChild(renderer.domElement);
+    renderer.domElement.style.background = 'transparent';
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.zIndex = '0';
+
+    clock = new THREE.Clock();
+    addMainHero(scene,0);
+     //mainHero.position.set(-3, heroBaseY, 0); // move hero left
+     //mainHero.position.set(-3,heroBaseY,0);
+
+    // // Adjust camera to view both hero and center area
+    // camera.position.set(0, 2, 6);
+    // camera.lookAt(new THREE.Vector3(0, 1, 0));
+    animate();
+  }
+
+
+  function animate() {
+    const deltaTime = clock.getDelta();
+    distance += rollingSpeed;
+    requestAnimationFrame(animate);
+    updateHero(deltaTime);
+    renderer.render(scene, camera);
+  }
+  
+  
 
   // Helper to make buttons
   function createButton(text) {
@@ -221,6 +270,7 @@ export function createMenu3(onStartCallback) {
   overlay.appendChild(startButton);
   overlay.appendChild(controlsButton);
   overlay.appendChild(quitButton);
+  overlay.appendChild(monster);
   document.body.appendChild(overlay);
 
   // Story screen function
