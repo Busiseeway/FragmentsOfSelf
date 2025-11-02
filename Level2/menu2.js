@@ -60,7 +60,7 @@ export function createMenu2(onStartCallback) {
   mainMenuButton.textContent = "MAIN MENU";
   styleMenuButton(mainMenuButton);
   mainMenuButton.addEventListener("click", () => {
-    window.location.href = "../mainmenu.html"; // adjust path if needed
+    window.location.href = "../index.html"; // adjust path if needed
   });
 
   // Assemble menu

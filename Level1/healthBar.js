@@ -53,7 +53,7 @@ export function checkCollisions(heroSphere, heroBaseY, scene) {
   if (!canTakeDamage) return;
 
   // Use the collision detection from obstaclesL3.js
-  if (checkObsCollisions(heroSphere)) {
+  if (checkObsCollisions(heroSphere).collided) {
     const currentTime = Date.now();
     console.log("collisin");
     // Ensure we don't process the same collision multiple times

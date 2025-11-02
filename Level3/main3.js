@@ -17,7 +17,8 @@ import { addSideWaterfalls, waterfalls } from "./waterfalls.js";
 import { addEmotions, emotions, emotionTypes } from "./emotions.js";
 import {
   addHearts,
-  checkCollisions,
+  takeDamage,
+  canTakeDamageNow,
   takeLanePenalty,
   resetHearts,
 } from "./healthBar.js";
@@ -25,15 +26,18 @@ import {
   spawnBarricade,
   updateObstacles,
   clearObstacles,
-   animateSmoke,
-   spawnRandomObstacle
+  animateSmoke,
+  spawnRandomObstacle,
+  checkObstacleCollision,
+  updateExplosions,
+  triggerExplosion,
+  getObstacles,
 } from "./obstacles.js";
 import { addSounds, sounds } from "./sounds.js";
 
 //Mukondi
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-
 
 let resetGame;
 
@@ -51,10 +55,13 @@ export function startLevel3() {
   let isPaused = false;
   let pauseButton;
   let resumeButton;
+  let isSliding = false;
+  let heroDisappeared = false;
+  let disappearTimer = 0;
 
   //theto menu
   let gameStarted = false;
-//Mukondi
+  //Mukondi
   let isFirstPerson = false;
   let controls;
   // Jump variables
@@ -178,15 +185,16 @@ export function startLevel3() {
       playJumpAnimation("jump"); // Trigger jump animation
     }
     //down arrow - slide
-    else if (keyEvent.keyCode === 40 && slide_can == 1) {
-      // up arrow - jump
+    else if (keyEvent.keyCode === 40 && slide_can == 1 && jump_can == 1) {
       slide_can = 0;
-      velocity_y = 10;
+      isSliding = true;
+      velocity_y = 0; // Don't move up or down initially
 
-      playJumpAnimation("slide"); // Trigger jump animation
+      playJumpAnimation("slide"); // Trigger slide animation
     }
-     //Mukondi
-     // V - toggle camera
+
+    //Mukondi
+    // V - toggle camera
     else if (keyEvent.key === "v" || keyEvent.key === "V") {
       toggleCameraView();
     }
@@ -206,13 +214,13 @@ export function startLevel3() {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
       // Position camera relative to character
-     // heroSphere.add(camera);
+      // heroSphere.add(camera);
       //camera.position.set(0, 1.8, 0);
       camera.position.copy(heroSphere.position);
-      camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
+      camera.position.y += (heroBaseY + 2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.position.z=1;
-     // console.log(camera.position);
+      camera.position.z = 1;
+      // console.log(camera.position);
     } else {
       // Switch to Third-Person
       PointerLockControls.enabled = false;
@@ -221,31 +229,37 @@ export function startLevel3() {
       // Reposition camera for third-person view
       // (This might involve setting orbitControls target and camera position)
       controls = new OrbitControls(camera, renderer.domElement);
-      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(
+        heroSphere.position.x - 5,
+        heroSphere.position.y + 3,
+        heroSphere.position.z
+      ); // Example offset
       camera.position.set(0, 4, 8);
       camera.lookAt(0, 0, 0);
     }
   }
 
- function updateCamera() {
-      if (isFirstPerson) {
-        OrbitControls.enabled = false;
-        PointerLockControls.enabled = true;
-        // Position camera relative to character
-        camera.position.copy(heroSphere.position);
-        camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
-        camera.position.x = heroSphere.position.x;
-      } else {
-        
-        PointerLockControls.enabled = false;
-        OrbitControls.enabled = true;
-        controls = new OrbitControls(camera, renderer.domElement);
-        camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
-        camera.position.set(0, 4, 8);
-        camera.lookAt(0, 0, 0);
-          
-      }
+  function updateCamera() {
+    if (isFirstPerson) {
+      OrbitControls.enabled = false;
+      PointerLockControls.enabled = true;
+      // Position camera relative to character
+      camera.position.copy(heroSphere.position);
+      camera.position.y += (heroBaseY + 2) / 2; // Adjust for eye level
+      camera.position.x = heroSphere.position.x;
+    } else {
+      PointerLockControls.enabled = false;
+      OrbitControls.enabled = true;
+      controls = new OrbitControls(camera, renderer.domElement);
+      camera.position.set(
+        heroSphere.position.x - 5,
+        heroSphere.position.y + 3,
+        heroSphere.position.z
+      ); // Example offset
+      camera.position.set(0, 4, 8);
+      camera.lookAt(0, 0, 0);
     }
+  }
   function update() {
     if (levelEnded) {
       return;
@@ -265,16 +279,79 @@ export function startLevel3() {
     if (heroSphere) {
       const elapsed = clock.getElapsedTime();
 
-        // Spawn obstacles periodically
+      // Spawn obstacles periodically
       if (elapsed - lastObstacleTime > obstacleInterval) {
-        spawnRandomObstacle(scene, heroSphere, heroBaseY, leftLane, middleLane, rightLane);
+        spawnRandomObstacle(
+          scene,
+          heroSphere,
+          heroBaseY,
+          leftLane,
+          middleLane,
+          rightLane
+        );
         lastObstacleTime = elapsed;
       }
 
       // Update all obstacles
-      updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere);
+      updateObstacles(scene, rollingSpeed, heroBaseY, heroSphere, deltaTime);
 
+      // Update explosion particles
+      updateExplosions(scene);
+
+      // Animate smoke particles
       animateSmoke();
+
+      // OBSTACLE COLLISION DETECTION - handles barricade explosion and hole disappearing
+      if (canTakeDamageNow() && !heroDisappeared) {
+        const collision = checkObstacleCollision(
+          heroSphere,
+          heroBaseY,
+          isSliding
+        );
+
+        if (collision) {
+          if (collision.type === "barricade") {
+            // Trigger explosion for barricade
+            triggerExplosion(scene, collision.obstacle);
+
+            // Remove the barricade
+            scene.remove(collision.obstacle);
+            const obstacles = getObstacles();
+            const obstacleIndex = obstacles.indexOf(collision.obstacle);
+            if (obstacleIndex > -1) {
+              obstacles.splice(obstacleIndex, 1);
+            }
+
+            // Take damage
+            takeDamage(heroSphere, heroBaseY);
+          } else if (collision.type === "hole") {
+            // Make hero disappear
+            heroDisappeared = true;
+            disappearTimer = 0;
+            heroSphere.visible = false;
+
+            // Take damage
+            takeDamage(heroSphere, heroBaseY);
+          } else if (
+            collision.type === "rollingSphere" ||
+            collision.type === "overheadBar"
+          ) {
+            // For other obstacles, just take damage normally
+            takeDamage(heroSphere, heroBaseY);
+          }
+        }
+      }
+
+      // Handle hero reappearing after falling in hole
+      if (heroDisappeared) {
+        disappearTimer += deltaTime;
+        if (disappearTimer > 0.5) {
+          // Disappear for 1.5 seconds
+          heroSphere.visible = true;
+          heroDisappeared = false;
+          disappearTimer = 0;
+        }
+      }
 
       // Smooth lane changing
       heroSphere.position.x = THREE.MathUtils.lerp(
@@ -298,15 +375,30 @@ export function startLevel3() {
         heroSphere.position.y =
           heroBaseY + Math.sin(distance * 10) * bounceValue;
       }
-      //slide animation when down key is pressed
-      if (slide_can === 0) {
-        heroSphere.position.y += velocity_y * deltaTime;
-        velocity_y -= 45 * deltaTime;
 
-        if (heroSphere.position.y <= heroBaseY) {
+      // Slide animation when down key is pressed
+      if (slide_can === 0) {
+        // Lower the hero during slide
+        const slideHeight = heroBaseY - 0.5; // Hero ducks down by 0.5 units
+        heroSphere.position.y = THREE.MathUtils.lerp(
+          heroSphere.position.y,
+          slideHeight,
+          10 * deltaTime
+        );
+
+        if (!heroSphere.userData.slideStartTime) {
+          heroSphere.userData.slideStartTime = clock.getElapsedTime();
+        }
+
+        const slideDuration = 0.8; // 0.8 seconds slide duration
+        if (
+          clock.getElapsedTime() - heroSphere.userData.slideStartTime >
+          slideDuration
+        ) {
           heroSphere.position.y = heroBaseY;
-          velocity_y = 0;
           slide_can = 1;
+          isSliding = false;
+          delete heroSphere.userData.slideStartTime;
         }
       }
 
@@ -366,11 +458,6 @@ export function startLevel3() {
       });
 
       // Camera follow
-      // camera.position.z = THREE.MathUtils.lerp(
-      //   camera.position.z,
-      //   heroSphere.position.z + 8,
-      //   2 * deltaTime
-      // );
       updateCamera();
 
       // Emotions (collectibles)
@@ -425,8 +512,8 @@ export function startLevel3() {
         }
       });
 
-      // Check health bar collisions
-      checkCollisions(heroSphere, heroBaseY, scene);
+      // REMOVED: checkCollisions(heroSphere, heroBaseY, scene, isSliding);
+      // Collision handling is now done above with the new system
     }
 
     render();
@@ -434,7 +521,7 @@ export function startLevel3() {
   }
 
   function render() {
-    renderer.sortObjects = true; 
+    renderer.sortObjects = true;
     renderer.render(scene, camera);
   }
 
@@ -458,17 +545,6 @@ export function startLevel3() {
       lastObstacleTime = clock.getElapsedTime();
     };
   }
-
-      function endLevel() {
-        if (levelEnded) return;
-        levelEnded = true;
-        clock.stop();
-        console.log("Level 3 Complete! Final Score: " + score);
-
-        setTimeout(() => {
-            if (onLevelComplete) onLevelComplete();
-        }, 500);
-    }
 }
 
 export { resetGame };

@@ -53,7 +53,6 @@ export function startLevel2() {
   let score = 0;
   let levelEnded = false;
 
-   
   //Mukondi
   let isFirstPerson = false;
   let controls;
@@ -229,7 +228,7 @@ export function startLevel2() {
       playJumpAnimation("slide"); // Trigger jump animation
     }
     //Mukondi
-     // V - toggle camera
+    // V - toggle camera
     else if (keyEvent.key === "v" || keyEvent.key === "V") {
       toggleCameraView();
     }
@@ -242,8 +241,8 @@ export function startLevel2() {
     }
   }
 
-    //Mukondi
-    function toggleCameraView() {
+  //Mukondi
+  function toggleCameraView() {
     isFirstPerson = !isFirstPerson;
 
     if (isFirstPerson) {
@@ -252,9 +251,9 @@ export function startLevel2() {
       PointerLockControls.enabled = true;
       // Position camera relative to character
       camera.position.copy(heroSphere.position);
-      camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
+      camera.position.y += (heroBaseY + 2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.position.z=1;
+      camera.position.z = 1;
     } else {
       // Switch to Third-Person
       PointerLockControls.enabled = false;
@@ -263,29 +262,35 @@ export function startLevel2() {
       // Reposition camera for third-person view
       // (This might involve setting orbitControls target and camera position)
       controls = new OrbitControls(camera, renderer.domElement);
-    
-      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+
+      camera.position.set(
+        heroSphere.position.x - 5,
+        heroSphere.position.y + 3,
+        heroSphere.position.z
+      ); // Example offset
       camera.position.set(0, 4, 8);
-      camera.lookAt(0, 0, 0);// camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.lookAt(0, 0, 0); // camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
     }
-    }
-   function updateCamera() {
+  }
+  function updateCamera() {
     if (isFirstPerson) {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
       // Position camera relative to character
       camera.position.copy(heroSphere.position);
-      camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
+      camera.position.y += (heroBaseY + 2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
     } else {
-      
       PointerLockControls.enabled = false;
       OrbitControls.enabled = true;
       controls = new OrbitControls(camera, renderer.domElement);
-      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(
+        heroSphere.position.x - 5,
+        heroSphere.position.y + 3,
+        heroSphere.position.z
+      ); // Example offset
       camera.position.set(0, 4, 8);
       camera.lookAt(0, 0, 0);
-        
     }
   }
 
@@ -405,7 +410,7 @@ export function startLevel2() {
           spawnBoulder(leftLane, rightLane, middleLane, heroBaseY, scene);
         }
       }
-updateCamera();
+      updateCamera();
       // Update emotions and obstacles
       emotions.forEach((emotion) => {
         if (!emotion.userData.collected) {
@@ -492,15 +497,4 @@ updateCamera();
     score = 0;
     lastObstacleTime = clock.getElapsedTime();
   }
-
-    function endLevel() {
-        if (levelEnded) return;
-        levelEnded = true;
-        clock.stop();
-        console.log("Level 2 Complete! Final Score: " + score);
-
-        setTimeout(() => {
-            if (onLevelComplete) onLevelComplete();
-        }, 500);
-    }
 }
