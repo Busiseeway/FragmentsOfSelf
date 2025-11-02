@@ -14,6 +14,46 @@ function navigateTo(route) {
 }
 
 export function startEndingScene() {
+    // NUCLEAR OPTION: Remove ALL UI elements
+    // Remove everything except the body and script tags
+    const keepTags = ['SCRIPT', 'STYLE'];
+    Array.from(document.body.children).forEach(child => {
+        if (!keepTags.includes(child.tagName) && child.tagName !== 'CANVAS') {
+            child.remove();
+        }
+    });
+
+    // Clear any inline styles on body that might show UI
+    document.body.style.cssText = `
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+    `;
+
+    // Add aggressive CSS to hide everything
+    const hideEverything = document.createElement('style');
+    hideEverything.textContent = `
+        * {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        div:not([data-completion-ui]),
+        button:not([data-restart-btn]),
+        h1:not([data-title]),
+        p:not([data-subtitle]) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        canvas {
+            display: block !important;
+            visibility: visible !important;
+        }
+    `;
+    document.head.appendChild(hideEverything);
+
     let scene, camera, renderer;
     let clock;
 
@@ -413,8 +453,21 @@ export function startEndingScene() {
     }
 
     function createCompletionUI() {
+        // Remove the aggressive hiding style temporarily for our UI
+        const allowUI = document.createElement('style');
+        allowUI.textContent = `
+            [data-completion-ui],
+            [data-completion-ui] * {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        `;
+        document.head.appendChild(allowUI);
+
         // Create overlay for completion message
         const overlay = document.createElement('div');
+        overlay.setAttribute('data-completion-ui', 'true');
         overlay.style.cssText = `
             position: fixed;
             top: 50%;
@@ -426,11 +479,12 @@ export function startEndingScene() {
         `;
 
         const title = document.createElement('h1');
+        title.setAttribute('data-title', 'true');
         title.textContent = 'JOURNEY COMPLETE';
         title.style.cssText = `
             color: #FFD700;
             font-size: 64px;
-            margin-bottom: 20px;
+            margin-bottom: 20px !important;
             text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
                          0 0 40px rgba(255, 215, 0, 0.5);
             font-weight: bold;
@@ -439,22 +493,24 @@ export function startEndingScene() {
         `;
 
         const subtitle = document.createElement('p');
+        subtitle.setAttribute('data-subtitle', 'true');
         subtitle.textContent = 'You conquered all challenges and found your path';
         subtitle.style.cssText = `
             color: white;
             font-size: 24px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-            margin-bottom: 40px;
+            margin-bottom: 40px !important;
             font-family: Arial, sans-serif;
         `;
 
         const restartBtn = document.createElement('button');
+        restartBtn.setAttribute('data-restart-btn', 'true');
         restartBtn.textContent = 'PLAY AGAIN';
         restartBtn.style.cssText = `
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 50px;
+            padding: 15px 50px !important;
             font-size: 20px;
             font-weight: bold;
             border-radius: 10px;
@@ -462,6 +518,7 @@ export function startEndingScene() {
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
             font-family: Arial, sans-serif;
+            display: inline-block !important;
         `;
 
         restartBtn.addEventListener('mouseover', () => {

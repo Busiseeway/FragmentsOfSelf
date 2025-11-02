@@ -8,6 +8,8 @@ import {
   updateObstacles,
   clearObstacles,
   addObstacles,
+  updateExplosionParticles,
+  explodeObstacle,
 } from "./obstacles1.js";
 import { addEmotions, emotions, emotionTypes } from "./emotions.js";
 import {
@@ -283,13 +285,13 @@ export function startLevel1() {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
       // Position camera relative to character
-     // heroSphere.add(camera);
+      // heroSphere.add(camera);
       //camera.position.set(0, 1.8, 0);
       camera.position.copy(heroSphere.position);
-      camera.position.y += (heroBaseY+2) / 2; // Adjust for eye level
+      camera.position.y += (heroBaseY + 2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-      camera.position.z=1;
-     // console.log(camera.position);
+      camera.position.z = 1;
+      // console.log(camera.position);
     } else {
       // Switch to Third-Person
       PointerLockControls.enabled = false;
@@ -298,7 +300,11 @@ export function startLevel1() {
       // Reposition camera for third-person view
       // (This might involve setting orbitControls target and camera position)
       controls = new OrbitControls(camera, renderer.domElement);
-      camera.position.set(heroSphere.position.x - 5, heroSphere.position.y + 3, heroSphere.position.z); // Example offset
+      camera.position.set(
+        heroSphere.position.x - 5,
+        heroSphere.position.y + 3,
+        heroSphere.position.z
+      ); // Example offset
       camera.position.set(0, 4, 8);
       camera.lookAt(0, 0, 0);
     }
@@ -309,9 +315,9 @@ export function startLevel1() {
       OrbitControls.enabled = false;
       PointerLockControls.enabled = true;
       camera.position.copy(heroSphere.position);
-      camera.position.y += (heroBaseY+2)/2 ; // Adjust for eye level
+      camera.position.y += (heroBaseY + 2) / 2; // Adjust for eye level
       camera.position.x = heroSphere.position.x;
-     //camera.rotation.y=(Math.PI);
+      //camera.rotation.y=(Math.PI);
     } else {
       const deltaTime = clock.getDelta();
       console.log("update camera");
@@ -347,6 +353,21 @@ export function startLevel1() {
           tree.position.z -= 200;
         }
       });
+
+      // Update obstacles
+      updateObstacles(scene, rollingSpeed, heroBaseY);
+
+      // Update explosion particles
+      updateExplosionParticles(scene);
+
+      // Check collision with explosion
+      const collisionResult = checkObsCollisions(heroSphere);
+      if (collisionResult.collided && collisionResult.obstacle.name === "log") {
+        explodeObstacle(scene, collisionResult.index);
+        checkCollisions(heroSphere, heroBaseY, scene);
+      } else {
+        checkCollisions(heroSphere, heroBaseY, scene);
+      }
 
       //theto (jump animation when up key is pressed)
       if (jump_can === 0) {

@@ -1,12 +1,9 @@
-import { getObstacles, checkObstacleCollision } from "./obstacles.js";
-
 let hearts = [];
 const heartTypes = [{ symbol: "❤️", name: "Full" }];
 
 // Short invulnerability after getting hit
 let canTakeDamage = true;
 const damageCooldown = 1000;
-let lastCollisionTime = 0;
 
 export function addHearts(count = 5) {
   const heartsContainer = document.createElement("div");
@@ -28,7 +25,6 @@ export function addHearts(count = 5) {
     heart.style.transition = "transform 0.2s, opacity 0.5s";
     heart.style.cursor = "pointer";
 
-    // Hover effect
     heart.addEventListener(
       "mouseenter",
       () => (heart.style.transform = "scale(1.2)")
@@ -47,7 +43,6 @@ export function addHearts(count = 5) {
 
 // Utility: safely flash red for Mesh or GLTF model
 function flashHeroRed(heroSphere) {
-  // For Meshes and GLTFs alike
   heroSphere.traverse
     ? heroSphere.traverse(applyFlash)
     : applyFlash(heroSphere);
@@ -61,8 +56,9 @@ function flashHeroRed(heroSphere) {
   }
 }
 
-function takeDamage(heroSphere, heroBaseY, scene) {
-  if (!canTakeDamage) return;
+// MODIFIED: Expose takeDamage so main.js can call it
+export function takeDamage(heroSphere, heroBaseY) {
+  if (!canTakeDamage) return false;
 
   removeHeart();
   canTakeDamage = false;
@@ -79,36 +75,13 @@ function takeDamage(heroSphere, heroBaseY, scene) {
   if (getRemainingHearts() === 0) {
     gameOver();
   }
+
+  return true; // Return true if damage was taken
 }
 
-// For obstacles
-export function checkCollisions(heroSphere, heroBaseY, scene) {
-  if (!canTakeDamage) return;
-
-  if (checkObstacleCollision(heroSphere, heroBaseY)) {
-    const currentTime = Date.now();
-    if (currentTime - lastCollisionTime > 100) {
-      const obstacles = getObstacles();
-
-      // Find and remove obstacle that was hit
-      for (let i = 0; i < obstacles.length; i++) {
-        const obs = obstacles[i];
-        const dx = heroSphere.position.x - obs.position.x;
-        const dy = heroSphere.position.y - obs.position.y;
-        const dz = heroSphere.position.z - obs.position.z;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (distance < 1.2) {
-          scene.remove(obs);
-          obstacles.splice(i, 1);
-          break;
-        }
-      }
-
-      takeDamage(heroSphere, heroBaseY, scene);
-      lastCollisionTime = currentTime;
-    }
-  }
+// MODIFIED: Just check if we CAN take damage (for main.js to use)
+export function canTakeDamageNow() {
+  return canTakeDamage;
 }
 
 // Hitting edges

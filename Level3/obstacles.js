@@ -7,25 +7,60 @@ let explosionParticles = [];
 // Difficulty & spawn control
 let difficultyLevel = 2;
 let timeSinceLastSpawn = 0;
-let spawnInterval = 2000; // milliseconds between spawns
+let spawnInterval = 2000;
 let lastSpawnTime = 0;
-let lastSpawnedType = null; // Track last spawned obstacle type
+let lastSpawnedType = null;
 
-// === Utility: Load rock textures (optional) ===
-const textureLoader = new THREE.TextureLoader();
-function loadTexture(path) {
-  return textureLoader.load(path, undefined, undefined, (err) =>
-    console.error(`❌ Failed to load texture: ${path}`, err)
-  );
+// **ADD THESE NEW TRACKING VARIABLES**
+let recentLanes = []; // Track recently used lanes
+let lastObstacleZ = -100; // Track Z position of last obstacle
+const MIN_OBSTACLE_DISTANCE = 15; // Minimum distance between obstacles
+const LANE_COOLDOWN = 3; // How many spawns before a lane can be reused
+
+// ... (keep existing texture loader code)
+
+// **ADD THIS HELPER FUNCTION**
+function getAvailableLanes(leftLane, middleLane, rightLane) {
+  const allLanes = [leftLane, middleLane, rightLane];
+
+  // Filter out recently used lanes
+  const availableLanes = allLanes.filter((lane) => {
+    return !recentLanes.includes(lane) || recentLanes.length >= 3;
+  });
+
+  // If all lanes are blocked, return all lanes (reset)
+  return availableLanes.length > 0 ? availableLanes : allLanes;
 }
 
-// === ROLLING SPHERE ===
-export function spawnRollingSphere(scene, leftLane, middleLane, rightLane) {
-  const lanes = [leftLane, middleLane, rightLane];
+// **ADD THIS HELPER FUNCTION**
+function trackLaneUsage(lane) {
+  recentLanes.push(lane);
+
+  // Keep only last few lanes in memory
+  if (recentLanes.length > LANE_COOLDOWN) {
+    recentLanes.shift();
+  }
+}
+
+// **UPDATE ROLLING SPHERE**
+export function spawnRollingSphere(
+  scene,
+  leftLane,
+  middleLane,
+  rightLane,
+  forceZ = null
+) {
+  const availableLanes = getAvailableLanes(leftLane, middleLane, rightLane);
   const radius = 0.5;
 
   const numLanes = Math.random() < 0.5 ? 1 : 2;
-  const shuffledLanes = lanes.sort(() => Math.random() - 0.5).slice(0, numLanes);
+  const shuffledLanes = availableLanes
+    .sort(() => Math.random() - 0.5)
+    .slice(0, Math.min(numLanes, availableLanes.length));
+
+  const spawnZ =
+    forceZ !== null ? forceZ : lastObstacleZ - MIN_OBSTACLE_DISTANCE;
+  lastObstacleZ = spawnZ;
 
   shuffledLanes.forEach((lane) => {
     const geometry = new THREE.DodecahedronGeometry(radius, 2);
@@ -35,7 +70,7 @@ export function spawnRollingSphere(scene, leftLane, middleLane, rightLane) {
       metalness: 0.3,
       roughness: 0.4,
       depthTest: true,
-      depthWrite: true
+      depthWrite: true,
     });
 
     const rollingSphere = new THREE.Mesh(geometry, material);
@@ -44,14 +79,23 @@ export function spawnRollingSphere(scene, leftLane, middleLane, rightLane) {
     rollingSphere.userData.type = "rollingSphere";
     rollingSphere.userData.radius = radius;
 
-    rollingSphere.position.set(lane, radius, -75);
+    rollingSphere.position.set(lane, radius, spawnZ);
     scene.add(rollingSphere);
     obstacles.push(rollingSphere);
+
+    trackLaneUsage(lane);
   });
 }
 
-// === BARRICADE ===
-export function spawnBarricade(scene, heroBaseY, leftLane, middleLane, rightLane) {
+// **UPDATE BARRICADE**
+export function spawnBarricade(
+  scene,
+  heroBaseY,
+  leftLane,
+  middleLane,
+  rightLane,
+  forceZ = null
+) {
   const barricadeGroup = new THREE.Group();
 
   const baseWidth = 2.4;
@@ -91,26 +135,54 @@ export function spawnBarricade(scene, heroBaseY, leftLane, middleLane, rightLane
     barricadeGroup.add(spike);
   }
 
+  // **UPDATE LANE SELECTION TO USE AVAILABLE LANES**
+  const availableLanes = getAvailableLanes(leftLane, middleLane, rightLane);
+
   const laneConfigs = [
     [leftLane, middleLane],
     [middleLane, rightLane],
-    [leftLane, rightLane]
+    [leftLane, rightLane],
   ];
-  
-  const config = laneConfigs[Math.floor(Math.random() * laneConfigs.length)];
+
+  // Filter configs to only use available lanes
+  const validConfigs = laneConfigs.filter(
+    (config) =>
+      availableLanes.includes(config[0]) || availableLanes.includes(config[1])
+  );
+
+  const config =
+    validConfigs.length > 0
+      ? validConfigs[Math.floor(Math.random() * validConfigs.length)]
+      : laneConfigs[Math.floor(Math.random() * laneConfigs.length)];
+
   const xPosition = (config[0] + config[1]) / 2;
+
+  const spawnZ =
+    forceZ !== null ? forceZ : lastObstacleZ - MIN_OBSTACLE_DISTANCE;
+  lastObstacleZ = spawnZ;
 
   barricadeGroup.position.x = xPosition;
   barricadeGroup.position.y = heroBaseY + baseHeight / 2;
-  barricadeGroup.position.z = -100;
+  barricadeGroup.position.z = spawnZ;
   barricadeGroup.userData.type = "barricade";
 
   scene.add(barricadeGroup);
   obstacles.push(barricadeGroup);
+
+  // Track both lanes
+  trackLaneUsage(config[0]);
+  trackLaneUsage(config[1]);
 }
 
-// === OVERHEAD BAR (Slide Under) ===
-export function spawnOverheadBar(scene, heroBaseY, leftLane, middleLane, rightLane) {
+// **UPDATE OVERHEAD BAR**
+export function spawnOverheadBar(
+  scene,
+  heroBaseY,
+  leftLane,
+  middleLane,
+  rightLane,
+  forceZ = null
+) {
   const barGroup = new THREE.Group();
   barGroup.userData.type = "overheadBar";
 
@@ -162,20 +234,35 @@ export function spawnOverheadBar(scene, heroBaseY, leftLane, middleLane, rightLa
     bar: bar,
     leftPole: leftPole,
     rightPole: rightPole,
-    spikes: spikes
+    spikes: spikes,
   };
 
-  const lanes = [leftLane, middleLane, rightLane];
-  const lane = lanes[Math.floor(Math.random() * lanes.length)];
+  // **USE AVAILABLE LANES**
+  const availableLanes = getAvailableLanes(leftLane, middleLane, rightLane);
+  const lane =
+    availableLanes[Math.floor(Math.random() * availableLanes.length)];
 
-  barGroup.position.set(lane, heroBaseY, -100);
+  const spawnZ =
+    forceZ !== null ? forceZ : lastObstacleZ - MIN_OBSTACLE_DISTANCE;
+  lastObstacleZ = spawnZ;
+
+  barGroup.position.set(lane, heroBaseY, spawnZ);
 
   scene.add(barGroup);
   obstacles.push(barGroup);
+
+  trackLaneUsage(lane);
 }
 
-// === HOLE ===
-export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
+// **UPDATE HOLE**
+export function spawnHole(
+  scene,
+  heroBaseY,
+  leftLane,
+  middleLane,
+  rightLane,
+  forceZ = null
+) {
   const holeGroup = new THREE.Group();
   holeGroup.userData.type = "hole";
 
@@ -214,59 +301,40 @@ export function spawnHole(scene, heroBaseY, leftLane, middleLane, rightLane) {
     const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial.clone());
     const startX = (Math.random() - 0.5) * 0.6;
     const startZ = (Math.random() - 0.5) * 0.6;
-    
-    smoke.position.set(
-      startX,
-      0.1 + Math.random() * 0.15,
-      startZ
-    );
+
+    smoke.position.set(startX, 0.1 + Math.random() * 0.15, startZ);
     smoke.scale.setScalar(0.5 + Math.random() * 0.5);
     holeGroup.add(smoke);
-    
+
     holeGroup.userData.smokeParticles.push({
       mesh: smoke,
       speed: 0.008 + Math.random() * 0.012,
       startX: startX,
       startZ: startZ,
       startY: smoke.position.y,
-      fadeSpeed: 0.002 + Math.random() * 0.003
+      fadeSpeed: 0.002 + Math.random() * 0.003,
     });
   }
 
-  const lanes = [leftLane, middleLane, rightLane];
-  const lane = lanes[Math.floor(Math.random() * lanes.length)];
-  holeGroup.position.set(lane, 0, -100);
+  // **USE AVAILABLE LANES**
+  const availableLanes = getAvailableLanes(leftLane, middleLane, rightLane);
+  const lane =
+    availableLanes[Math.floor(Math.random() * availableLanes.length)];
+
+  const spawnZ =
+    forceZ !== null ? forceZ : lastObstacleZ - MIN_OBSTACLE_DISTANCE;
+  lastObstacleZ = spawnZ;
+
+  holeGroup.position.set(lane, 0, spawnZ);
   holeGroup.receiveShadow = true;
 
   scene.add(holeGroup);
   obstacles.push(holeGroup);
+
+  trackLaneUsage(lane);
 }
 
-export function animateSmoke() {
-  obstacles.forEach(obstacle => {
-    if (obstacle.userData.type === "hole" && obstacle.userData.smokeParticles) {
-      obstacle.userData.smokeParticles.forEach(particle => {
-        particle.mesh.position.y += particle.speed;
-        particle.mesh.material.opacity -= particle.fadeSpeed;
-        particle.mesh.scale.x += 0.002;
-        particle.mesh.scale.y += 0.002;
-        particle.mesh.scale.z += 0.002;
-        
-        if (particle.mesh.material.opacity <= 0 || particle.mesh.position.y > 2) {
-          particle.mesh.position.set(
-            particle.startX,
-            particle.startY,
-            particle.startZ
-          );
-          particle.mesh.material.opacity = 0.4;
-          particle.mesh.scale.setScalar(0.5 + Math.random() * 0.5);
-        }
-      });
-    }
-  });
-}
-
-// === RANDOM OBSTACLE SPAWN ===
+// **UPDATE RANDOM OBSTACLE SPAWN**
 export function spawnRandomObstacle(
   scene,
   _heroSphere,
@@ -313,16 +381,76 @@ export function spawnRandomObstacle(
 
   lastSpawnedType = obstacleType;
 
+  // **UPDATE DOUBLE SPAWN LOGIC**
   if (Math.random() < 0.2 * difficultyLevel) {
     const rand2 = Math.random();
+    const doubleSpawnZ = lastObstacleZ - MIN_OBSTACLE_DISTANCE; // Extra spacing for double spawn
+
     if (lastSpawnedType === "overheadBar") {
-      spawnBarricade(scene, heroBaseY, leftLane, middleLane, rightLane);
+      spawnBarricade(
+        scene,
+        heroBaseY,
+        leftLane,
+        middleLane,
+        rightLane,
+        doubleSpawnZ
+      );
     } else {
-      if (rand2 < 0.33) spawnRollingSphere(scene, leftLane, middleLane, rightLane);
-      else if (rand2 < 0.66) spawnBarricade(scene, heroBaseY, leftLane, middleLane, rightLane);
-      else spawnOverheadBar(scene, heroBaseY, leftLane, middleLane, rightLane);
+      if (rand2 < 0.33)
+        spawnRollingSphere(
+          scene,
+          leftLane,
+          middleLane,
+          rightLane,
+          doubleSpawnZ
+        );
+      else if (rand2 < 0.66)
+        spawnBarricade(
+          scene,
+          heroBaseY,
+          leftLane,
+          middleLane,
+          rightLane,
+          doubleSpawnZ
+        );
+      else
+        spawnOverheadBar(
+          scene,
+          heroBaseY,
+          leftLane,
+          middleLane,
+          rightLane,
+          doubleSpawnZ
+        );
     }
   }
+}
+
+export function animateSmoke() {
+  obstacles.forEach((obstacle) => {
+    if (obstacle.userData.type === "hole" && obstacle.userData.smokeParticles) {
+      obstacle.userData.smokeParticles.forEach((particle) => {
+        particle.mesh.position.y += particle.speed;
+        particle.mesh.material.opacity -= particle.fadeSpeed;
+        particle.mesh.scale.x += 0.002;
+        particle.mesh.scale.y += 0.002;
+        particle.mesh.scale.z += 0.002;
+
+        if (
+          particle.mesh.material.opacity <= 0 ||
+          particle.mesh.position.y > 2
+        ) {
+          particle.mesh.position.set(
+            particle.startX,
+            particle.startY,
+            particle.startZ
+          );
+          particle.mesh.material.opacity = 0.4;
+          particle.mesh.scale.setScalar(0.5 + Math.random() * 0.5);
+        }
+      });
+    }
+  });
 }
 
 // === SMOKE UPDATE ===
@@ -408,10 +536,12 @@ export function checkObstacleCollision(heroSphere, heroBaseY, isSliding) {
 
     switch (obs.userData.type) {
       case "hole":
+        // Can't jump over holes if you're on the ground
         if (heroSphere.position.y > heroBaseY + 0.5) continue;
         break;
 
       case "overheadBar":
+        // Can slide under overhead bars
         if (isSliding) continue;
         break;
     }
@@ -428,7 +558,7 @@ export function checkObstacleCollision(heroSphere, heroBaseY, isSliding) {
 function createExplosion(scene, obstacle) {
   const position = obstacle.position.clone();
   const particleCount = 20;
-  
+
   let color;
   switch (obstacle.userData.type) {
     case "rollingSphere":
@@ -446,7 +576,7 @@ function createExplosion(scene, obstacle) {
     default:
       color = 0xffffff;
   }
-  
+
   for (let i = 0; i < particleCount; i++) {
     const size = 0.1 + Math.random() * 0.15;
     const geometry = new THREE.BoxGeometry(size, size, size);
@@ -455,63 +585,63 @@ function createExplosion(scene, obstacle) {
       emissive: color,
       emissiveIntensity: 0.5,
       metalness: 0.6,
-      roughness: 0.4
+      roughness: 0.4,
     });
-    
+
     const particle = new THREE.Mesh(geometry, material);
     particle.position.copy(position);
     particle.castShadow = true;
-    
+
     const speed = 0.15 + Math.random() * 0.25;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.random() * Math.PI;
-    
+
     particle.userData.velocity = new THREE.Vector3(
       Math.sin(phi) * Math.cos(theta) * speed,
       Math.sin(phi) * Math.sin(theta) * speed + 0.1,
       Math.cos(phi) * speed
     );
-    
+
     particle.userData.rotationSpeed = new THREE.Vector3(
       (Math.random() - 0.5) * 0.3,
       (Math.random() - 0.5) * 0.3,
       (Math.random() - 0.5) * 0.3
     );
-    
+
     particle.userData.lifetime = 60;
     particle.userData.age = 0;
-    
+
     scene.add(particle);
     explosionParticles.push(particle);
   }
-  
+
   const flashGeometry = new THREE.SphereGeometry(0.5, 16, 16);
   const flashMaterial = new THREE.MeshBasicMaterial({
     color: 0xffff00,
     transparent: true,
-    opacity: 1.0
+    opacity: 1.0,
   });
   const flash = new THREE.Mesh(flashGeometry, flashMaterial);
   flash.position.copy(position);
   scene.add(flash);
-  
+
   explosionParticles.push({
     mesh: flash,
     isFlash: true,
     age: 0,
-    lifetime: 10
+    lifetime: 10,
   });
 }
 
 export function updateExplosions(scene) {
   for (let i = explosionParticles.length - 1; i >= 0; i--) {
     const particle = explosionParticles[i];
-    
+
     if (particle.isFlash) {
       particle.age++;
-      particle.mesh.material.opacity = 1 - (particle.age / particle.lifetime);
+      particle.mesh.material.opacity = 1 - particle.age / particle.lifetime;
       particle.mesh.scale.multiplyScalar(1.2);
-      
+
       if (particle.age >= particle.lifetime) {
         scene.remove(particle.mesh);
         explosionParticles.splice(i, 1);
@@ -519,19 +649,19 @@ export function updateExplosions(scene) {
     } else {
       const p = particle;
       p.userData.age++;
-      
+
       p.position.add(p.userData.velocity);
       p.userData.velocity.y -= 0.01;
-      
+
       p.rotation.x += p.userData.rotationSpeed.x;
       p.rotation.y += p.userData.rotationSpeed.y;
       p.rotation.z += p.userData.rotationSpeed.z;
-      
+
       const fadeProgress = p.userData.age / p.userData.lifetime;
       p.material.opacity = 1 - fadeProgress;
       p.material.transparent = true;
       p.material.emissiveIntensity = 0.5 * (1 - fadeProgress);
-      
+
       if (p.userData.age >= p.userData.lifetime) {
         scene.remove(p);
         explosionParticles.splice(i, 1);
@@ -550,11 +680,11 @@ export function getObstacles() {
   return obstacles;
 }
 
+// **UPDATE CLEAR OBSTACLES TO RESET TRACKING**
 export function clearObstacles(scene) {
   obstacles.forEach((obj) => scene.remove(obj));
   obstacles = [];
-  
-  // Clear explosion particles too
+
   explosionParticles.forEach((particle) => {
     if (particle.isFlash) {
       scene.remove(particle.mesh);
@@ -563,4 +693,9 @@ export function clearObstacles(scene) {
     }
   });
   explosionParticles = [];
+
+  // **RESET TRACKING VARIABLES**
+  recentLanes = [];
+  lastObstacleZ = -100;
+  lastSpawnedType = null;
 }

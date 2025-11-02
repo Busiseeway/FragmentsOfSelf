@@ -42,9 +42,10 @@ export function addEmotions(scene) {
 
     // Make a sphere with its texture
     const geometry = new THREE.CircleGeometry(0.5, 32, 32);
-    const material = new THREE.MeshLambertMaterial({
+    const material = new THREE.MeshStandardMaterial({
       map: type.texture,
       transparent: true,
+      opacity: 0.4,
     });
     const emotion = new THREE.Mesh(geometry, material);
 
