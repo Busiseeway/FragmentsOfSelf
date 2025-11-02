@@ -2,6 +2,17 @@
 import * as THREE from 'three';
 import { addEndingHero, updateEndingHero, endingHero } from './endingHero.js';
 
+// Detect base path
+const basePath = window.location.pathname.includes('/home/sbitbybit')
+  ? '/home/sbitbybit'
+  : '';
+
+// Helper function for navigation
+function navigateTo(route) {
+  const baseUrl = basePath ? `${basePath}/index.html` : '/index.html';
+  window.location.href = `${baseUrl}?route=${route}`;
+}
+
 export function startEndingScene() {
     let scene, camera, renderer;
     let clock;
@@ -13,13 +24,13 @@ export function startEndingScene() {
     const camera2 = new THREE.PerspectiveCamera();
     camera2.add(listener);
     const menuMusic = new THREE.Audio(listener);
-      const audioLoader = new THREE.AudioLoader();
-      audioLoader.load('assets/sounds/fast-rocky-loop-275535.mp3', buffer => {
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('assets/sounds/fast-rocky-loop-275535.mp3', buffer => {
         menuMusic.setBuffer(buffer);
         menuMusic.setLoop(true);
         menuMusic.setVolume(1.0);
         menuMusic.play();
-      });
+    });
 
     function init() {
         // Create scene
@@ -424,6 +435,7 @@ export function startEndingScene() {
                          0 0 40px rgba(255, 215, 0, 0.5);
             font-weight: bold;
             animation: glow 2s ease-in-out infinite alternate;
+            font-family: Arial, sans-serif;
         `;
 
         const subtitle = document.createElement('p');
@@ -433,6 +445,7 @@ export function startEndingScene() {
             font-size: 24px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
             margin-bottom: 40px;
+            font-family: Arial, sans-serif;
         `;
 
         const restartBtn = document.createElement('button');
@@ -448,6 +461,7 @@ export function startEndingScene() {
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            font-family: Arial, sans-serif;
         `;
 
         restartBtn.addEventListener('mouseover', () => {
@@ -461,7 +475,12 @@ export function startEndingScene() {
         });
 
         restartBtn.addEventListener('click', () => {
-            window.location.href = '/level1';
+            console.log('Current pathname:', window.location.pathname);
+            console.log('Detected basePath:', basePath);
+            const baseUrl = basePath ? `${basePath}/index.html` : '/index.html';
+            const fullUrl = `${baseUrl}?route=/level1`;
+            console.log('Navigating to:', fullUrl);
+            window.location.href = fullUrl;
         });
 
         overlay.appendChild(title);

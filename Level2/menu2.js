@@ -1,4 +1,16 @@
 // menu2.js
+
+// Detect base path
+const basePath = window.location.pathname.includes('/home/sbitbybit')
+  ? '/home/sbitbybit'
+  : '';
+
+// Helper function for navigation
+function navigateTo(route) {
+  const baseUrl = basePath ? `${basePath}/index.html` : '/index.html';
+  window.location.href = `${baseUrl}?route=${route}`;
+}
+
 export function createMenu2(onStartCallback) {
   // Create overlay background
   const overlay = document.createElement("div");
@@ -40,7 +52,6 @@ export function createMenu2(onStartCallback) {
   // Instructions
   const instructions = document.createElement("div");
   instructions.innerHTML = `
-    
     <p style="color: #FFD700; font-size: 18px; margin: 15px 0;">
       The thunder roars. The road is wet. Be alert and collect the emotions to survive the storm.
     </p>
@@ -60,7 +71,8 @@ export function createMenu2(onStartCallback) {
   mainMenuButton.textContent = "MAIN MENU";
   styleMenuButton(mainMenuButton);
   mainMenuButton.addEventListener("click", () => {
-    window.location.href = "../mainmenu.html"; // adjust path if needed
+    const baseUrl = basePath ? `${basePath}/index.html` : '/index.html';
+    window.location.href = baseUrl;
   });
 
   // Assemble menu
@@ -140,7 +152,7 @@ export function createLevel2CompleteMenu() {
   const message = document.createElement("p");
   message.innerHTML = `
     <span style="color: #FFD700; font-size: 18px;">
-      You’ve conquered the storm! 🌩️<br>
+      You've conquered the storm! 🌩️<br>
       Ready for the next challenge?
     </span>
   `;
@@ -151,21 +163,22 @@ export function createLevel2CompleteMenu() {
   nextLevelBtn.textContent = "GO TO LEVEL 3";
   styleMenuButton(nextLevelBtn);
   nextLevelBtn.addEventListener("click", () => {
-    window.location.href = "./level3";
+    navigateTo('/level3');
   });
 
   const restartBtn = document.createElement("button");
   restartBtn.textContent = "RESTART LEVEL 2";
   styleMenuButton(restartBtn);
   restartBtn.addEventListener("click", () => {
-    window.location.reload();
+    navigateTo('/level2');
   });
 
   const mainMenuBtn = document.createElement("button");
   mainMenuBtn.textContent = "MAIN MENU";
   styleMenuButton(mainMenuBtn);
   mainMenuBtn.addEventListener("click", () => {
-    window.location.href = "../index.html";
+    const baseUrl = basePath ? `${basePath}/index.html` : '/index.html';
+    window.location.href = baseUrl;
   });
 
   // Assemble menu
